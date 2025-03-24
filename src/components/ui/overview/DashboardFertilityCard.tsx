@@ -78,15 +78,15 @@ export default function FertilityProgressCard({
         </div>
 
         <dd className="mt-2 flex items-baseline gap-2">
-            <span className="text-xl text-gray-900 dark:text-gray-50">
-              {value}
-            </span>
-            <span className="text-sm text-gray-500">{valueDescription}</span>
-          </dd>
+          <span className="text-xl text-gray-900 dark:text-gray-50">
+            {value}
+          </span>
+          <span className="text-sm text-gray-500">{valueDescription}</span>
+        </dd>
 
 
         <div className="flex justify-center items-center my-6 gap-4">
-          <ProgressCircle value={data[0].percentage} radius={80} strokeWidth={7}>
+          <ProgressCircle value={data[0].percentage} radius={80} strokeWidth={7} variant="neutral">
             <ProgressCircle value={data[1].percentage} radius={70} strokeWidth={7}>
               <ProgressCircle
                 value={data[2].percentage}

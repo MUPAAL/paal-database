@@ -1,134 +1,206 @@
 "use client"
 import { siteConfig } from "@/app/siteConfig"
-import { cx, focusRing } from "@/lib/utils"
+import { Divider } from "@/components/Divider"
+import { Input } from "@/components/Input"
 import {
-  RiDeviceLine,
-  RiHome2Line,
-  RiLinkM,
-  RiListCheck
-} from "@remixicon/react"
-import Link from "next/link"
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarLink,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarSubLink,
+} from "@/components/Sidebar"
+import { cx, focusRing } from "@/lib/utils"
+import { RiArrowDownSFill } from "@remixicon/react"
+import { BookText, House, PackageSearch } from "lucide-react"
 import { usePathname } from "next/navigation"
-import MobileSidebar from "./MobileSidebar"
-import { WorkspacesDropdownDesktop, WorkspacesDropdownMobile } from "./SidebarWorkspacesDropdown"
-import { UserProfileDesktop } from "./UserProfile"
-
+import * as React from "react"
+import { UserProfile } from "./UserProfile"
 
 const navigation = [
-  { name: "Dashboard", href: siteConfig.baseLinks.overview, icon: RiHome2Line },
-  { name: "Pig Tables", href: siteConfig.baseLinks.details, icon: RiListCheck },
-  { name: "Device Data", href: siteConfig.baseLinks.support, icon: RiDeviceLine },
-  /* {
-    name: "Settings",
-    href: siteConfig.baseLinks.settings,
-    icon: RiSettings5Line,
-  },
-  */
-] as const
-
-
-const shortcuts = [
   {
-    name: "PAAL Wiki Page",
-    href: "https://github.com/brodynelly/paal-test/wiki",
-    icon: RiLinkM,
+    name: "Dashboard",
+    href: "/overview",
+    icon: House,
+    notifications: false,
   },
   {
-    name: "PAAL Landing Page",
-    href: "https://cafnrfaculty.missouri.edu/mupaa/",
-    icon: RiLinkM,
-  },
-  {
-    name: "Dashboard – Posture Distribution",
-    href: "/metrics/Posture",
-    icon: RiLinkM,
+    name: "Notifications",
+    href: "",
+    icon: PackageSearch,
+    notifications: 5,
   },
 ] as const
 
-export function Sidebar() {
+const navigation2 = [
+  {
+    name: "System Overview",
+    href: siteConfig.baseLinks.details,
+    icon: BookText,
+    children: [
+      {
+        name: "Farms",
+        href: "/",
+      },
+      {
+        name: "Monitering",
+        href: "/",
+      },
+      {
+        name: "Insights & Reports",
+        href: "/",
+      },
+    ],
+  },
+  {
+    name: "Tables",
+    href: siteConfig.baseLinks.details,
+    icon: PackageSearch,
+    children: [
+      {
+        name: "Pigs",
+        href: siteConfig.baseLinks.details,
+      },
+      {
+        name: "Devices",
+        href: siteConfig.baseLinks.support,
+      },
+    ],
+  },
+] as const
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const [openMenus, setOpenMenus] = React.useState<string[]>([
+    navigation2[0].name,
+    navigation2[1].name,
+  ])
+  const isActive = React.useCallback((itemHref: string): boolean => {
+    if (!itemHref) return false
 
-  const isActive = (itemHref: string) => {
-    // Guard clause to handle undefined href values
-    if (!itemHref) return false;
-
-    if (itemHref === siteConfig.baseLinks.settings.general) {
+    if (itemHref === siteConfig.baseLinks.settings?.general) {
       return pathname.startsWith("/settings")
     }
-    return pathname === itemHref || pathname.startsWith(itemHref)
+
+    return pathname === itemHref || pathname.startsWith(`${itemHref}/`)
+  }, [pathname])
+
+  const toggleMenu = (name: string) => {
+    setOpenMenus((prev: string[]) =>
+      prev.includes(name)
+        ? prev.filter((item: string) => item !== name)
+        : [...prev, name],
+    )
   }
   return (
-    <>
-      {/* sidebar (lg+) */}
-
-      <nav className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <aside className="flex grow flex-col gap-y-6 overflow-y-auto border-r border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-950">
-          <WorkspacesDropdownDesktop />
-          <nav
-            aria-label="core navigation links"
-            className="flex flex-1 flex-col space-y-10"
-          >
-            <ul role="list" className="space-y-0.5">
+    <Sidebar {...props} className="bg-gray-50 dark:bg-gray-925">
+      <SidebarHeader className="px-3 py-4">
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 items-center justify-center rounded-md bg-white p-1.5 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+            {/* <Logo className="size-6 text-blue-500 dark:text-blue-500" /> */}
+          </span>
+          <div>
+            <span className="block text-sm font-semibold text-gray-900 dark:text-gray-50">
+              PAALABS
+            </span>
+            <span className="block text-xs text-gray-900 dark:text-gray-50">
+              PAAL @ MIZZOU
+            </span>
+          </div>
+        </div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <Input
+              type="search"
+              placeholder="Search items..."
+              className="[&>input]:sm:py-1.5"
+            />
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup className="pt-0">
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
               {navigation.map((item) => (
-                <li key={item.name}>
-                  <Link
+                <SidebarMenuItem key={item.name}>
+                  <SidebarLink
                     href={item.href}
+                    isActive={isActive(item.href)}
+                    icon={item.icon}
+                    notifications={item.notifications}
+
+                  >
+                    {item.name}
+                  </SidebarLink>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <div className="px-3">
+          <Divider className="my-0 py-0" />
+        </div>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-4">
+              {navigation2.map((item) => (
+                <SidebarMenuItem key={item.name}>
+                  {/* @CHRIS/SEV: discussion whether to componentize (-> state mgmt) */}
+                  <button
+                    onClick={() => toggleMenu(item.name)}
                     className={cx(
-                      isActive(item.href)
-                        ? "text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-700 hover:text-gray-900 dark:text-gray-400 hover:dark:text-gray-50",
-                      "flex items-center gap-x-2.5 rounded-md px-2 py-1.5 text-sm font-medium transition hover:bg-gray-100 hover:dark:bg-gray-900",
+                      "flex w-full items-center justify-between gap-x-2.5 rounded-md p-2 text-base text-gray-900 transition hover:bg-gray-200/50 sm:text-sm dark:text-gray-400 hover:dark:bg-gray-900 hover:dark:text-gray-50",
                       focusRing,
                     )}
                   >
-                    <item.icon className="size-4 shrink-0" aria-hidden="true" />
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <div>
-              <span className="text-xs font-medium leading-6 text-gray-500">
-                Shortcuts
-              </span>
-              <ul aria-label="shortcuts" role="list" className="space-y-0.5">
-                {shortcuts.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={cx(
-                        pathname === item.href || pathname.startsWith(item.href)
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-700 hover:text-gray-900 dark:text-gray-400 hover:dark:text-gray-50",
-                        "flex items-center gap-x-2.5 rounded-md px-2 py-1.5 text-sm font-medium transition hover:bg-gray-100 hover:dark:bg-gray-900",
-                        focusRing,
-                      )}
-                    >
+                    <div className="flex items-center gap-2.5">
                       <item.icon
-                        className="size-4 shrink-0"
+                        className="size-[18px] shrink-0"
                         aria-hidden="true"
                       />
                       {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-          </nav>
-          <div className="mt-auto">
-            <UserProfileDesktop />
-          </div>
-        </aside>
-      </nav>
-      {/* top navbar (xs-lg) */}
-      <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-2 shadow-sm sm:gap-x-6 sm:px-4 lg:hidden dark:border-gray-800 dark:bg-gray-950">
-        <WorkspacesDropdownMobile />
-        <div className="flex items-center gap-1 sm:gap-2">
-          <MobileSidebar />
-        </div>
-      </div>
-    </>
+                    </div>
+                    <RiArrowDownSFill
+                      className={cx(
+                        openMenus.includes(item.name)
+                          ? "rotate-0"
+                          : "-rotate-90",
+                        "size-5 shrink-0 transform text-gray-400 transition-transform duration-150 ease-in-out dark:text-gray-600",
+                      )}
+                      aria-hidden="true"
+                    />
+                  </button>
+                  {item.children && openMenus.includes(item.name) && (
+                    <SidebarMenuSub>
+                      <div className="absolute inset-y-0 left-4 w-px bg-gray-300 dark:bg-gray-800" />
+                      {item.children.map((child) => (
+                        <SidebarMenuItem key={child.name}>
+                          <SidebarSubLink
+                            href={child.href}
+                            isActive={isActive(child.href)}
+                          >
+                            {child.name}
+                          </SidebarSubLink>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenuSub>
+                  )}
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <div className="border-t border-gray-200 dark:border-gray-800" />
+        <UserProfile />
+      </SidebarFooter>
+    </Sidebar>
   )
 }

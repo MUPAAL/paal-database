@@ -111,7 +111,7 @@ export default function PigDashboard() {
         {getBCSStatusBadge(pig.age)}
       </div>
 
-      
+
 
       <section className="my-8">
         <div className="space-y-12">

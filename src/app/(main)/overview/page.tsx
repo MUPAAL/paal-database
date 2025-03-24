@@ -3,12 +3,13 @@
 import { ChartCard } from "@/components/ui/overview/DashboardChartCard";
 import FertilityProgressCard from "@/components/ui/overview/DashboardFertilityCard";
 import { Filterbar } from "@/components/ui/overview/DashboardFilterbar";
+import HeatProgressCard from "@/components/ui/overview/DashboardHeatCard";
 import { ProgressBarCard } from "@/components/ui/overview/DashboardProgressBarCard";
 import { BarnStallCard } from "@/components/ui/overview/DashboardStallBarCard";
 import { subDays } from "date-fns";
 import React from "react";
-import { useOverviewData } from "./components/useOverviewData";
 import { categories, maxDate } from "./components/constants";
+import { useOverviewData } from "./components/useOverviewData";
 
 export default function Overview() {
   const {
@@ -132,6 +133,8 @@ export default function Overview() {
             selectedBarn={selectedBarn}
             onBarnSelect={(barn) => setSelectedBarn(barn)}
           />
+        </div>
+        <div className="mt-4 grid grid-cols-1 gap-14 sm:mt-8 sm:grid-cols-2 lg:mt- xl:grid-cols-2">
 
           <FertilityProgressCard
             title="Fertility Metrics"
@@ -143,8 +146,7 @@ export default function Overview() {
             ctaLink="/fertility-details"
             data={FertilityStatus}
           />
-
-          <FertilityProgressCard
+          <HeatProgressCard
             title="Heat Metrics"
             change=""
             value="89%"
@@ -168,7 +170,7 @@ export default function Overview() {
             maxDate={maxDate}
             minDate={subDays(maxDate, 30)}
             selectedDates={selectedDates}
-            onDatesChange={(dates) => setSelectedDates(dates)}
+            onDatesChange={(dates) => { if (dates?.from && dates?.to) { setSelectedDates({ from: dates.from, to: dates.to }); } }}
             selectedPeriod={selectedPeriod}
             onPeriodChange={(period) => setSelectedPeriod(period)}
             categories={categories}

@@ -67,7 +67,7 @@ export const ChartCard = React.memo(function ChartCard({
 
     // Use the first category as the default value
     const defaultCategory = categories[0];
-    return lastEntry[defaultCategory] || 0;
+    return lastEntry[defaultCategory as keyof ChartDataPoint] || 0;
   }, [filteredData, categories]);
 
   return (
