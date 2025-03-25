@@ -105,10 +105,11 @@ export default function HeatProgressCard({
                                     >
                                         <p>
                                             <span className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-                                                7.8
+                                                {data[4].current + data[3].current + data[2].current + data[1].current + data[0].current}
                                             </span>
                                             <span className="text-sm text-gray-500 dark:text-gray-500">
-                                                /10
+                                                {data[4].allowed}
+
                                             </span>
                                         </p>
                                     </ProgressCircle>

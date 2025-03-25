@@ -9,6 +9,7 @@ import { BarnStallCard } from "@/components/ui/overview/DashboardStallBarCard";
 import { subDays } from "date-fns";
 import React from "react";
 import { categories, maxDate } from "./components/constants";
+import PlaceHolder from "./components/placeholder";
 import { useOverviewData } from "./components/useOverviewData";
 
 export default function Overview() {
@@ -78,12 +79,9 @@ export default function Overview() {
   }
 
   if (error) {
-    return (
-      <div className="p-4 text-red-600 dark:text-red-400">
-        {error}
-      </div>
-    );
+    return <div><PlaceHolder /></div>;
   }
+
 
   return (
     <>
@@ -96,21 +94,24 @@ export default function Overview() {
         </h1>
         <div className="mt-4 grid grid-cols-1 gap-14 sm:mt-8 sm:grid-cols-2 lg:mt-10 xl:grid-cols-3">
           <ProgressBarCard
-            title="Device Status"
+            title={"Device Metrics"}
             change="+1.2%"
-            value="75%"
+            value={`${(deviceData[0].percentage)}%`}
             valueDescription="of devices online"
             ctaDescription="Device maintenance due in 5 days."
             ctaText="View devices"
-            ctaLink="/support"
+            ctaLink="/system-overview/insights"
             data={deviceData}
           />
           <ProgressBarCard
             title="Health Metrics"
             change="Healthy"
-            value="85%"
+            value={`${healthData[1].percentage}`}
             valueDescription="normal health indicators"
-            ctaDescription="2 pigs require attention."
+            ctaDescription={`${(healthData[0].current)
+              + (healthData[2].current)
+              + (healthData[3].current)
+              } pigs require attention.`}
             ctaText="View details"
             ctaLink="/details"
             data={healthData}
@@ -119,7 +120,7 @@ export default function Overview() {
           <BarnStallCard
             title="Barn/Stall Metrics"
             change="Farm 1"
-            value="121"
+            value={`${healthData[0].allowed}`}
             valueDescription="Total Pigs"
             ctaDescription="View stall details."
             ctaText="View details"
@@ -138,21 +139,21 @@ export default function Overview() {
           <FertilityProgressCard
             title="Fertility Metrics"
             change=""
-            value="78%"
+            value={`${FertilityStatus[1].current}`}
             valueDescription="optimal breeding conditions"
-            ctaDescription="3 pigs ready for breeding."
+            ctaDescription={`${FertilityStatus[1].current} pigs ready for breeding.`}
             ctaText="View details"
-            ctaLink="/fertility-details"
+            ctaLink="/details"
             data={FertilityStatus}
           />
           <HeatProgressCard
             title="Heat Metrics"
             change=""
-            value="89%"
+            value={`${heatStats[1].current}`}
             valueDescription="optimal breeding conditions"
-            ctaDescription="3 pigs ready for breeding."
+            ctaDescription={`${heatStats[1].current} pigs ready for breeding.`}
             ctaText="View details"
-            ctaLink="/heat-status"
+            ctaLink="/details"
             data={heatStats}
           />
         </div>

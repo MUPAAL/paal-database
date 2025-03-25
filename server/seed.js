@@ -135,8 +135,8 @@ async function seedDatabase() {
     };
 
     for (let pig of pigs) {
-      const pigId = pig._id;
-      await PigHealthStatus.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, status: getRandomItem(statuses.health) })));
+      const pigId = pig.pigId; 
+      await PigHealthStatus.insertMany(timestamps.map(ts => ({ pigId , timestamp: ts, status: getRandomItem(statuses.health) })));
       await PigFertility.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, status: getRandomItem(statuses.fertility) })));
       await PigHeatStatus.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, status: getRandomItem(statuses.heat) })));
       await PigPosture.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, score: getRandomInt(1, 5) })));

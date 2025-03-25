@@ -104,7 +104,9 @@ export default function Overview() {
         fetchStallData()
     }, [])
 
-    if (loading) return <div>Loading...</div>
+    if (loading) return (<div className="flex items-center justify-center p-8">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+    </div>)
 
     // Get unique barns for the dropdown
     const allBarns = farmData.flatMap(farm =>
@@ -221,7 +223,7 @@ export default function Overview() {
                                                 colSpan={7}
                                                 className="bg-gray-50 py-3 pl-4 sm:pl-6 dark:bg-gray-900"
                                             >
-                                               {barn.name}
+                                                {barn.name}
 
                                             </TableHeaderCell>
                                         </TableRow>

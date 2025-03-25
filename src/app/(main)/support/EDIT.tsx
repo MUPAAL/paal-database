@@ -24,7 +24,7 @@ export default function Support() {
       yesterday: number;
     };
   }
-  
+
   const [deviceMetrics, setDeviceMetrics] = useState<DeviceMetrics>({
     totalDevices: 0,
     deviceStatus: [],
@@ -99,7 +99,9 @@ export default function Support() {
   }
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return (<div className="flex items-center justify-center p-8">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+    </div>)
   }
 
   if (error) {
@@ -147,8 +149,8 @@ export default function Support() {
                     className={cx(
                       "size-2.5 shrink-0 rounded-sm",
                       index === 0 ? "bg-blue-500 dark:bg-blue-500" :
-                      index === 1 ? "bg-gray-400 dark:bg-gray-600" :
-                      "bg-red-500 dark:bg-red-500"
+                        index === 1 ? "bg-gray-400 dark:bg-gray-600" :
+                          "bg-red-500 dark:bg-red-500"
                     )}
                     aria-hidden="true"
                   />
@@ -226,18 +228,18 @@ export default function Support() {
               </div>
             </dd>
             <LineChartSupport
-                className="h-28"
-                data={volume}
-                index="time"
-                categories={["Today", "Yesterday"]}
-                colors={["blue", "gray"]}
-                showTooltip={false}
-                valueFormatter={(number: number) =>
-                  Intl.NumberFormat("us").format(number).toString()
-                }
-                startEndOnly={true}
-                showYAxis={false}
-                showLegend={false}
+              className="h-28"
+              data={volume}
+              index="time"
+              categories={["Today", "Yesterday"]}
+              colors={["blue", "gray"]}
+              showTooltip={false}
+              valueFormatter={(number: number) =>
+                Intl.NumberFormat("us").format(number).toString()
+              }
+              startEndOnly={true}
+              showYAxis={false}
+              showLegend={false}
             />
           </div>
         </Card>

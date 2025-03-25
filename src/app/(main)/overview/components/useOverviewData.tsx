@@ -45,17 +45,16 @@ export const useOverviewData = () => {
       },
       {
         title: "Data Collection Rate",
-        percentage: 92,
-        current: 92,
-        allowed: 100,
-        unit: "%",
+        percentage: data.deviceStats.deviceUsage,
+        current: data.deviceStats.onlineDevices,
+        allowed: data.deviceStats.totalDevices,
       },
       {
         title: "Storage Usage",
-        percentage: 45,
+        percentage: 29,
         current: 4.5,
         allowed: 10,
-        unit: "GB",
+        unit: " GB",
       },
     ]);
 

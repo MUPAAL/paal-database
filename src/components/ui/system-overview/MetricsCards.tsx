@@ -51,22 +51,22 @@ function Indicator({ number }: { number: number }) {
 
 const metrics: Metric[] = [
     {
-        label: "Lead-to-Quote Ratio",
-        value: 0.61,
-        percentage: "59.8%",
-        fraction: "450/752",
+        label: "Farms Active",
+        value: 1,
+        percentage: "100%",
+        fraction: "2/2",
     },
     {
-        label: "Project Load",
-        value: 0.24,
-        percentage: "12.9%",
-        fraction: "129/1K",
+        label: "Barns Active",
+        value: 1,
+        percentage: "100%",
+        fraction: "6/6",
     },
     {
-        label: "Win Probability",
-        value: 0.8,
+        label: "Stalls Active",
+        value: 0.5,
         percentage: "85.1%",
-        fraction: "280/329",
+        fraction: "20/26",
     },
 ]
 

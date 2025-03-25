@@ -52,7 +52,7 @@ const navigation2 = [
         href: siteConfig.baseLinks.systemOverview.monitoring,
       },
       {
-        name: "Insights & Reports",
+        name: "Device Insights",
         href: siteConfig.baseLinks.systemOverview.insights,
       },
     ],
@@ -65,10 +65,6 @@ const navigation2 = [
       {
         name: "Pigs",
         href: siteConfig.baseLinks.details,
-      },
-      {
-        name: "Devices",
-        href: siteConfig.baseLinks.support,
       },
     ],
   },
