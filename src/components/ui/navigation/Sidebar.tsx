@@ -17,7 +17,7 @@ import {
 } from "@/components/Sidebar"
 import { cx, focusRing } from "@/lib/utils"
 import { RiArrowDownSFill } from "@remixicon/react"
-import { BookText, House, PackageSearch } from "lucide-react"
+import { BookText, House, Link, PackageSearch } from "lucide-react"
 import { usePathname } from "next/navigation"
 import * as React from "react"
 import { UserProfile } from "./UserProfile"
@@ -67,6 +67,28 @@ const navigation2 = [
         href: siteConfig.baseLinks.details,
       },
     ],
+  },
+] as const
+
+// navigation for sidebar element with shortcuts
+const navigation3 = [
+  {
+    name: "PAAL Landing Page",
+    href: "https://cafnrfaculty.missouri.edu/mupaa/",
+    icon: Link,
+    notifications: false,
+  },
+  {
+    name: "System Documentation",
+    href: "https://github.com/brodynelly/paal/wiki",
+    icon: Link,
+    notifications: false,
+  },
+  {
+    name: "Device Table",
+    href: "http://localhost:8080/system-overview/insights",
+    icon: Link,
+    notifications: false,
   },
 ] as const
 
@@ -189,6 +211,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   )}
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <div className="px-3">
+          <Divider className="my-0 py-0" />
+        </div>
+        <SidebarGroup className="my-4">
+          <SidebarGroupContent title="Shortcuts">
+            <SidebarMenu className="">
+              {navigation3.map((item) => (
+                <SidebarMenuItem key={item.name}>
+                  <SidebarLink
+                    href={item.href}
+                    isActive={isActive(item.href)}
+                    icon={item.icon}
+                    notifications={item.notifications}
+                  >
+                    {item.name}
+                  </SidebarLink>
+                </SidebarMenuItem>
+              ))}
+
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
