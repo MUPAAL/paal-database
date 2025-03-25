@@ -455,7 +455,7 @@ export function PigEditDrawer({
   // 4) On mount, fetch master farm list
   useEffect(() => {
     api
-      .get("farms")
+      .get("/farms")
       .then((res) => setFarms(res.data))
       .catch((err) => console.error("Error fetching farms:", err));
   }, []);
@@ -464,7 +464,7 @@ export function PigEditDrawer({
   useEffect(() => {
     if (formData.farm) {
       api
-        .get(`/barns?farmId=${formData.farm}`)
+        .get(`/barns/farm/${formData.farm}`)
         .then((res) => setBarns(res.data))
         .catch((err) => console.error("Error fetching barns for farm:", err));
     } else {

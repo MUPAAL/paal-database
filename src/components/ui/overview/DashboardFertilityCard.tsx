@@ -68,7 +68,7 @@ export default function FertilityProgressCard({
   const percentageFormatter = (number: number) => `${number.toFixed(1)}%`;
 
   return (
-    <div className="flex flex-col justify-between">
+    <div className="flex flex-col justify-between ">
       <div>
         <div className="flex items-center gap-2">
           <dt className="font-bold text-gray-900 sm:text-sm dark:text-gray-50">
@@ -85,7 +85,8 @@ export default function FertilityProgressCard({
         </dd>
 
 
-        <div className="flex justify-center items-center my-6 gap-4">
+
+        <div className="flex justify-left items-center my-6 gap-2">
           <ProgressCircle value={data[0].percentage} radius={80} strokeWidth={7} variant="neutral">
             <ProgressCircle value={data[1].percentage} radius={70} strokeWidth={7}>
               <ProgressCircle
@@ -114,6 +115,8 @@ export default function FertilityProgressCard({
           </ProgressCircle>
 
 
+
+          {/* Vertical Divider - NOW VISIBLE */}
 
 
           {/* <li key={item.title} className="flex items-center gap-2 text-xs">

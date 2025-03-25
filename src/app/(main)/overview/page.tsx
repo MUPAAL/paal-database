@@ -133,8 +133,7 @@ export default function Overview() {
             selectedBarn={selectedBarn}
             onBarnSelect={(barn) => setSelectedBarn(barn)}
           />
-        </div>
-        <div className="mt-4 grid grid-cols-1 gap-14 sm:mt-8 sm:grid-cols-2 lg:mt- xl:grid-cols-2">
+
 
           <FertilityProgressCard
             title="Fertility Metrics"

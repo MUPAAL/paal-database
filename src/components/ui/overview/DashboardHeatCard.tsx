@@ -87,7 +87,7 @@ export default function HeatProgressCard({
                 </dd>
 
 
-                <div className="flex justify-center items-center my-6 gap-4">
+                <div className="flex justify-left items-center my-6 gap-2">
                     <ProgressCircle value={data[0].percentage} radius={90} strokeWidth={7} variant="neutral">
                         <ProgressCircle value={data[1].percentage} radius={80} strokeWidth={7} variant="default">
                             <ProgressCircle value={data[2].percentage} radius={70} strokeWidth={7} variant="success">
@@ -116,9 +116,6 @@ export default function HeatProgressCard({
                             </ProgressCircle>
                         </ProgressCircle>
                     </ProgressCircle>
-
-
-
 
                     {/* <li key={item.title} className="flex items-center gap-2 text-xs">
                         <span

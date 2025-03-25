@@ -342,40 +342,30 @@ export function PigDrawer({ open, onOpenChange }: PigDrawerProps) {
   const [farms, setFarms] = useState<Farm[]>([])
   const [barns, setBarns] = useState<Barn[]>([])
   const [stalls, setStalls] = useState<Stall[]>([])
-
-  // Fetch farms on mount
+  // Fetch farms
   useEffect(() => {
-    api
-      .get("/farms")
-      .then((res) => {
-        setFarms(res.data)
-      })
-      .catch((err) => console.error("Error fetching farms:", err))
-  }, [])
+    api.get('/farms')
+      .then((res) => setFarms(res.data))
+      .catch(console.error);
+  }, []);
 
-  // Whenever a farm is selected, fetch barns for that farm.
+  // Fetch barns when farm is selected
   useEffect(() => {
     if (formData.farm) {
-      api
-        .get(`/barns?farmId=${formData.farm}`)
-        .then((res) => {
-          setBarns(res.data)
-        })
-        .catch((err) => console.error("Error fetching barns for farm:", err))
+      api.get(`/barns/farm/${formData.farm}`)
+        .then((res) => setBarns(res.data))
+        .catch(console.error);
     } else {
-      setBarns([])
+      setBarns([]);
     }
-  }, [formData.farm])
+  }, [formData.farm]);
 
-  // Fetch stalls on mount
+  // Fetch all stalls
   useEffect(() => {
-    api
-      .get("/stalls")
-      .then((res) => {
-        setStalls(res.data)
-      })
-      .catch((err) => console.error("Error fetching stalls:", err))
-  }, [])
+    api.get('/stalls')
+      .then((res) => setStalls(res.data))
+      .catch(console.error);
+  }, []);
 
   const handleUpdateForm = (updates: Partial<PigFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }))

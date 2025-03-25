@@ -1,193 +1,237 @@
-require('dotenv').config()
-const express = require('express')
-const mongoose = require('mongoose')
-const cors = require('cors')
-const { createServer } = require('http')
-const { Server } = require('socket.io')
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
-const app = express()
-const httpServer = createServer(app)
+const app = express();
+const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
     origin: "*",
     methods: ["GET", "POST", "DELETE", "PUT"],
   }
-})
-
-const port = 5005
-
-var RateLimit = require('express-rate-limit');
-var limiter = RateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per windowMs
-  keyGenerator: (req) => {
-    // Use the first IP in the X-Forwarded-For header (client's real IP)
-    return req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
-  },
 });
 
-app.set('trust proxy', true); 
 
-// ──────────────────────────────────────────────────────────────────────────────
+const port = 5005;
+
 // Middleware
-// ──────────────────────────────────────────────────────────────────────────────
-app.use(cors())
-app.use(limiter); 
-app.use(express.json())
+app.use(cors());
+app.use(express.json());
 
-// ──────────────────────────────────────────────────────────────────────────────
 // Routes
-// Update these paths to match your new route files exactly.
-// For instance, if your device route file is named './routes/device.js':
-//   app.use('/api/devices', require('./routes/device'))
-// Adjust the naming as needed for consistency.
-// ──────────────────────────────────────────────────────────────────────────────
-app.use('/api/farms', require('./routes/farm'))
-app.use('/api/barns', require('./routes/barn'))
-app.use('/api/stalls', require('./routes/stall'))
-app.use('/api/devices', require('./routes/devices'))      // updated to match your device.js
-app.use('/api/pigs', require('./routes/pig'))            // updated to match your pig.js
-app.use('/api/temperature', require('./routes/temperatureData'))
-app.use('/api/stats', require('./routes/stats'))
-app.use('/api/upload/postureupload', require('./routes/upload/postureUpload')) // llisten for uploaded csvs 
-var RateLimit = require('express-rate-limit');
+app.use('/api/farms', require('./routes/farm'));
+app.use('/api/barns', require('./routes/barn'));
+app.use('/api/stalls', require('./routes/stall'));
+app.use('/api/devices', require('./routes/devices'));
+app.use('/api/pigs', require('./routes/pig'));
+app.use('/api/temperature', require('./routes/temperatureData'));
+app.use('/api/stats', require('./routes/stats'));
+app.use('/api/upload/postureupload', require('./routes/upload/postureUpload'));
+app.use('/api/systemmanagement', require('./routes/system-management/management'));
 
-
-
-
-// ──────────────────────────────────────────────────────────────────────────────
 // Database Connection
-// ──────────────────────────────────────────────────────────────────────────────
-const DATABASE_HOST = process.env.DATABASE_HOST
-const DATABASE_PORT = process.env.DATABASE_PORT
-const DATABASE_DB = process.env.MONGO_INITDB_DATABASE
-const DATABASE_USERNAME = process.env.MONGO_INITDB_ROOT_USERNAME
-const DATABASE_PASSWORD = process.env.MONGO_INITDB_ROOT_PASSWORD
+const DATABASE_HOST = process.env.DATABASE_HOST;
+const DATABASE_PORT = process.env.DATABASE_PORT;
+const DATABASE_DB = process.env.MONGO_INITDB_DATABASE;
+const DATABASE_USERNAME = process.env.MONGO_INITDB_ROOT_USERNAME;
+const DATABASE_PASSWORD = process.env.MONGO_INITDB_ROOT_PASSWORD;
 
 const URI = `mongodb://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@mongo:${DATABASE_PORT}/${DATABASE_DB}?replicaSet=rs0&authSource=admin`;
 
 mongoose.connect(URI)
   .then(() => {
-    console.log('MongoDB Connected')
+    console.log('MongoDB Connected');
 
-    // Set up change stream for the Pig collection
-    const Pig = require('./models/Pig')
-    const pigChangeStream = Pig.watch([], { fullDocument: 'updateLookup' })
+    // Register all models after connection
+    require('./models/Pig');
+    require('./models/PigBCS');
+    require('./models/PostureData');
+    require('./models/PigHeatStatus');
+    require('./models/PigHealthStatus');
+    require('./models/PigVulvaSwelling');
+    require('./models/PigBreathRate');
+    require('./models/Device'); 
+    require('./models/TemperatureData'); 
+    require('./models/Farm');
+    require('./models/Barn');
+    require('./models/Stall');
+
+    // Set up change streams after models are registered
+    const Pig = mongoose.model('Pig');
+    const pigChangeStream = Pig.watch([], { fullDocument: 'updateLookup' });
     pigChangeStream.on('change', async (change) => {
-      await emitUpdatedStats()
-    })
+      await emitUpdatedStats();
+    });
 
-    // Set up change stream for the Device collection
-    const Device = require('./models/Device')
-    const deviceChangeStream = Device.watch([], { fullDocument: 'updateLookup' })
+    const Device = mongoose.model('Device');
+    const deviceChangeStream = Device.watch([], { fullDocument: 'updateLookup' });
     deviceChangeStream.on('change', async (change) => {
-      await emitUpdatedStats()
-    })
+      await emitUpdatedStats();
+    });
   })
-  .catch(err => console.error('MongoDB Connection Error:', err))
+  .catch(err => console.error('MongoDB Connection Error:', err));
 
-// ──────────────────────────────────────────────────────────────────────────────
 // Socket.IO Event Handlers
-// ──────────────────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id)
-
+  console.log('Client connected:', socket.id);
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id)
-  })
-})
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
-// ──────────────────────────────────────────────────────────────────────────────
 // Function to Emit Updated Stats
-// (Called periodically and on collection changes)
-// ──────────────────────────────────────────────────────────────────────────────
 const emitUpdatedStats = async () => {
   try {
-    // Import any models needed to build stats
-    const Device = require('./models/Device')
-    const BCSData = require('./models/BCSData')
-    const PostureData = require('./models/PostureData')
-    const TemperatureData = require('./models/TemperatureData')
-    const Pig = require('./models/Pig')
-    const PigHealthStatus = require('./models/PigHealthStatus')
-    const PigFertility = require('./models/PigFertility')
-    const PigHeatStatus = require('./models/PigHeatStatus')
-    const Barn = require('./models/Barn')
-    const Stall = require('./models/Stall')
-
-    // If you also want Farm, Barn, Stall stats in real time:
-    // const Farm = require('./models/Farm')
-    // const Barn = require('./models/Barn')
-    // const Stall = require('./models/Stall')
+    // Get all required models
+    const Device = mongoose.model('Device');
+    const PigBCS = mongoose.model('PigBCS');
+    const PostureData = mongoose.model('PigPosture');
+    const TemperatureData = mongoose.model('TemperatureData');
+    const Pig = mongoose.model('Pig');
+    const PigHealthStatus = mongoose.model('PigHealthStatus');
+    const PigFertility = require('./models/PigFertility');
+    const PigHeatStatus = mongoose.model('PigHeatStatus');
+    const Barn = mongoose.model('Barn');
+    const pigFertilityData = require('./models/PigFertility'); 
+    const Stall = mongoose.model('Stall');
 
     // Get device stats
-    const devices = await Device.find({})
-    const onlineDevices = devices.filter(d => d.status === 'online').length
-    const totalDevices = devices.length
-    const deviceUsage = totalDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0
+    const devices = await Device.find({});
+    const onlineDevices = devices.filter(d => d.status === 'online').length;
+    const totalDevices = devices.length;
+    const deviceUsage = totalDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0;
 
     // Get latest temperature readings
     const latestTemps = await TemperatureData.find({})
       .sort({ timestamp: -1 })
-      .limit(devices.length)
+      .limit(devices.length);
     const avgTemp = latestTemps.length > 0 
       ? latestTemps.reduce((acc, curr) => acc + curr.temperature, 0) / latestTemps.length 
-      : 0
+      : 0;
 
-    // BCS distribution
-    const bcsData = await BCSData.find({}).sort({ timestamp: -1 })
+    // BCS distribution using PigBCS
+    const bcsData = await PigBCS.find({}).sort({ timestamp: -1 });
     const avgBCS = bcsData.length > 0 
-      ? bcsData.reduce((acc, curr) => acc + curr.bcsScore, 0) / bcsData.length 
-      : 0
+      ? bcsData.reduce((acc, curr) => acc + curr.score, 0) / bcsData.length 
+      : 0;
 
     // Posture distribution
-    const postureData = await PostureData.find({}).sort({ timestamp: -1 })
+    const postureData = await PostureData.find({}).sort({ timestamp: -1 });
     const postureCounts = postureData.reduce((acc, curr) => {
-      acc[curr.score] = (acc[curr.score] || 0) + 1
-      return acc
-    }, {})
-    const totalPostures = postureData.length
+      acc[curr.score] = (acc[curr.score] || 0) + 1;
+      return acc;
+    }, {});
+    const totalPostures = postureData.length;
     const postureDistribution = Object.entries(postureCounts).map(([score, count]) => ({
       score: Number(score),
       count,
       percentage: totalPostures > 0 ? Math.round((count / totalPostures) * 100) : 0
-    }))
+    }));
 
     // Get all pigs
-    const pigs = await Pig.find({}).sort({ lastUpdate: -1 })
-    // If you also store bcsScore or other fields directly in `Pig`, you can derive analytics from them
+    const pigs = await Pig.find({}).sort({ lastUpdate: -1 });
 
-
-    // Optionally get extended pig health/fertility data
-    const pigHealthStatuses = await PigHealthStatus.find({ pigId: { $in: pigs.map(pig => pig._id) } })
-    const pigFertilityStatuses = await PigFertility.find({ pigId: { $in: pigs.map(pig => pig._id) } })
-    const pigHeatStatuses = await PigHeatStatus.find({ pigId: { $in: pigs.map(pig => pig._id) } })
-
-    
-    // Pig Health aggregation
+    // Pig Health Status aggregation
     const pigHealthAggregated = await PigHealthStatus.aggregate([
       { $sort: { timestamp: -1 } },
       { $group: { _id: "$pigId", status: { $first: "$status" } } },
       { $group: { _id: "$status", count: { $sum: 1 } } }
     ]);
 
-    const pigHealthStats = pigHealthAggregated.reduce((acc, curr) => {
-      acc[curr._id.replace(/\s+/g, '')] = curr.count;
-      return acc;
-    }, {});
+    // Initialize health stats with all possible statuses
+    const pigHealthStats = {
+      'at risk': 0,
+      'healthy': 0,
+      'critical': 0,
+      'no movement': 0
+    };
 
-    // Pig Fertility aggregation
-    const pigFertilityAggregated = await PigFertility.aggregate([
-      { $sort: { timestamp: -1 } }, // Step 1: Sort by latest timestamp
-      { $group: { _id: "$pigId", status: { $first: "$status" } } }, // Step 2: Get latest status per pig
-      { $group: { _id: "$status", count: { $sum: 1 } } } // Step 3: Count total per fertility status
+    // Update health stats from aggregation
+    pigHealthAggregated.forEach(item => {
+      if (pigHealthStats.hasOwnProperty(item._id)) {
+        pigHealthStats[item._id] = item.count;
+      }
+    });
+
+    // Pig Heat Status aggregation
+    const pigHeatStatusAggregated = await PigHeatStatus.aggregate([
+      { $sort: { timestamp: -1 } },
+      { $group: { _id: "$pigId", status: { $first: "$status" } } },
+      { $group: { _id: "$status", count: { $sum: 1 } } }
     ]);
 
-    const pigFertilityStats = pigFertilityAggregated.reduce((acc, curr) => {
-      acc[curr._id.replace(/\s+/g, '')] = curr.count;
+    // Initialize heat stats with all possible statuses
+    const pigHeatStats = {
+      'open': 0,
+      'bred': 0,
+      'pregnant': 0,
+      'farrowing': 0,
+      'weaning': 0
+    };
+
+    // Update heat stats from aggregation
+    pigHeatStatusAggregated.forEach(item => {
+      if (pigHeatStats.hasOwnProperty(item._id)) {
+        pigHeatStats[item._id] = item.count;
+      }
+    });
+    const pigFertilityAggregated = await PigFertility.aggregate([
+      { $sort: { timestamp: -1 } },
+      { $group: { _id: "$pigId", status: { $first: "$status" } } },
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+
+    const fertilityStats = pigFertilityAggregated.reduce((acc, curr) => {
+      acc[curr._id.toLowerCase().replace(/\s+/g, '')] = curr.count;
+      return acc;
+    }, {});
+    // Pig Fertility aggregation
+
+    const barns = await Barn.find({});
+    const stalls = await Stall.find({});
+
+    // Barn Stats
+    const barnStats = barns.reduce((acc, barn) => {
+      const pigsInBarn = pigs.filter(p => p.currentLocation?.barnId?.toString() === barn._id.toString()).length;
+      acc[barn.name] = pigsInBarn;
       return acc;
     }, {});
 
+    // Stall Stats
+    const stallStats = barns.reduce((barnAcc, barn) => {
+      const stallsInBarn = stalls.filter(stall => stall.barnId?.toString() === barn._id.toString());
+      const stallSummary = stallsInBarn.reduce((stallAcc, stall) => {
+        const pigsInStall = pigs.filter(p => p.currentLocation?.stallId?.toString() === stall._id.toString()).length;
+        stallAcc[stall.name] = pigsInStall;
+        return stallAcc;
+      }, {});
+      barnAcc[barn.name] = stallSummary;
+      return barnAcc;
+    }, {});
+
+    // Transform pigs for UI
+    const transformedPigs = pigs.map(pig => ({
+      owner: `PIG-${pig.pigId.toString().padStart(3, '0')}`,
+      status: pig.bcsScore >= 4 ? "critical" : pig.bcsScore >= 3 ? "healthy" : "suspicious",
+      costs: pig.age,
+      region: pig.currentLocation.stallId,
+      stability: pig.stability,
+      lastEdited: pig.lastUpdate
+        ? new Date(pig.lastUpdate).toLocaleDateString('en-GB', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          })
+        : new Date().toLocaleDateString('en-GB', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+          }),
+      breed: pig.breed,
+      healthStatus: pigHealthAggregated.find(status => status._id === pig._id.toString())?.status,
+      heatStatus: pigHeatStatusAggregated.find(status => status._id === pig._id.toString())?.status
+    }));
 
     // Transform devices for UI
     const transformedDevices = devices.map(device => ({
@@ -204,75 +248,7 @@ const emitUpdatedStats = async () => {
       lastDataPoint: device.lastUpdate
         ? new Date(device.lastUpdate).toISOString()
         : new Date().toISOString()
-    }))
-
-        const pigHeatStatusData = await PigHeatStatus.aggregate([
-          { $sort: { timestamp: -1 } },
-          { $group: { _id: "$pigId", status: { $first: "$status" } } },
-          { $group: { _id: "$status", count: { $sum: 1 } } }
-        ]);
-    
-        // Calculate totals for each heat status
-        const pigHeatStats = {
-          totalOpen: pigHeatStatusData.find(h => h._id === 'open')?.count || 0,
-          totalBred: pigHeatStatusData.find(h => h._id === 'bred')?.count || 0,
-          totalPregnant: pigHeatStatusData.find(h => h._id === 'pregnant')?.count || 0,
-          totalFarrowing: pigHeatStatusData.find(h => h._id === 'farrowing')?.count || 0,
-          totalWeaning: pigHeatStatusData.find(h => h._id === 'weaning')?.count || 0,
-        };
-
-
-    const barns = await Barn.find({})
-    const stalls = await Stall.find({})
-        
-
-    // Barn Stats = total pigs per barn
-    const barnStats = barns.reduce((acc, barn) => {
-      const pigsInBarn = pigs.filter(p => p.currentLocation?.barnId?.toString() === barn._id.toString()).length
-      acc[barn.name] = pigsInBarn
-      return acc
-    }, {})
-
-    // Stall Stats = nested: { barnName: { stallName: count } }
-    const stallStats = barns.reduce((barnAcc, barn) => {
-      const stallsInBarn = stalls.filter(stall => stall.barnId?.toString() === barn._id.toString())
-
-      const stallSummary = stallsInBarn.reduce((stallAcc, stall) => {
-        const pigsInStall = pigs.filter(p => p.currentLocation?.stallId?.toString() === stall._id.toString()).length
-        stallAcc[stall.name] = pigsInStall
-        return stallAcc
-      }, {})
-
-      barnAcc[barn.name] = stallSummary
-      return barnAcc
-    }, {})
-
-    // Transform pigs for UI    
-    
-
-
-    
-    const transformedPigs = pigs.map(pig => ({
-      
-      owner: `PIG-${pig.pigId.toString().padStart(3, '0')}`,
-      status: pig.bcsScore >= 4 ? "critical" : pig.bcsScore >= 3 ? "healthy" : "suspicious",
-      costs: pig.age,
-      region: pig.currentLocation.stallId, 
-      stability: pig.stability, // random example
-      lastEdited: pig.lastUpdate
-        ? new Date(pig.lastUpdate).toLocaleDateString('en-GB', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-          })
-        : new Date().toLocaleDateString('en-GB', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
-          }),
-      breed: pig.breed,
-      healthStatus: pigHealthStatuses.find(status => status.pigId.toString() === pig._id.toString())?.status,
-      /* fertilityStatus: pigFertilityStatuses.find(status => status.pigId.toString() === pig._id.toString())?.status, */
-      heatStatus: pigHeatStatuses.find(status => status.pigId.toString() === pig._id.toString())?.status
-    }))
+    }));
 
     // Emit aggregated stats
     io.emit('stats_update', {
@@ -286,44 +262,44 @@ const emitUpdatedStats = async () => {
         averageBCS: Number(avgBCS.toFixed(1))
       },
       postureDistribution,
-      // You can include more combined stats here if you want.
       pigStats: {
         totalPigs: pigs.length,
       },
-      pigHeatStats, 
-      barnStats,      // Now included
-      stallStats,      // Now included
+      pigHeatStats: {
+        totalOpen: pigHeatStats['open'],
+        totalBred: pigHeatStats['bred'],
+        totalPregnant: pigHeatStats['pregnant'],
+        totalFarrowing: pigHeatStats['farrowing'],
+        totalWeaning: pigHeatStats['weaning']
+      },
+      barnStats,
+      stallStats,
       pigHealthStats: {
-        totalAtRisk: pigHealthAggregated.filter(h => h._id === 'at risk')[0]?.count || 0,
-        totalHealthy: pigHealthAggregated.filter(h => h._id === 'healthy')[0]?.count || 0,
-        totalCritical: pigHealthAggregated.filter(h => h._id === 'critical')[0]?.count || 0,
-        totalNoMovement: pigHealthAggregated.filter(h => h._id === 'no movement')[0]?.count || 0,
+        totalAtRisk: pigHealthStats['at risk'],
+        totalHealthy: pigHealthStats['healthy'],
+        totalCritical: pigHealthStats['critical'],
+        totalNoMovement: pigHealthStats['no movement']
       },
       pigFertilityStats: {
-        InHeat: pigFertilityStats.inheat || 0,
-        PreHeat: pigFertilityAggregated.filter(f => f._id === 'Pre-Heat')[0]?.count || 0,
-        Open: pigFertilityAggregated.filter(f => f._id === 'Open')[0]?.count || 0,
-        ReadyToBreed: pigFertilityAggregated.filter(f => f._id === 'ready to breed')[0]?.count || 0,
-      },
-    })
+        InHeat: fertilityStats['in-heat'] || 0,
+        PreHeat: fertilityStats['pre-heat'] || 0,
+        Open: fertilityStats['open'] || 0,
+        ReadyToBreed: fertilityStats['ready-to-breed'] || 0,
+      }
+    });
 
     // Emit lists for devices and pigs
-    io.emit('devices_update', transformedDevices)
-    io.emit('pigs_update', transformedPigs)
+    io.emit('devices_update', transformedDevices);
+    io.emit('pigs_update', transformedPigs);
 
   } catch (error) {
-    console.error('Error emitting updates:', error)
+    console.error('Error emitting updates:', error);
   }
-}
+};
 
-// ──────────────────────────────────────────────────────────────────────────────
 // Periodically Emit Stats
-// ──────────────────────────────────────────────────────────────────────────────
-setInterval(emitUpdatedStats, 5000)
-
-// ─────────────────────
-
+setInterval(emitUpdatedStats, 5000);
 
 httpServer.listen(port, () => {
-  console.log(`Server running on port ${port}`)
-})
+  console.log(`Server running on port ${port}`);
+});

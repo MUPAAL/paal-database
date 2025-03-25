@@ -1,17 +1,17 @@
-import { useEffect, useState, useCallback } from "react";
-import { subDays } from "date-fns";
 import api from "@/lib/axios";
 import { subscribeToStats } from "@/lib/socket";
+import { subDays } from "date-fns";
+import { useCallback, useEffect, useState } from "react";
 import {
   KpiEntry,
   KpiEntryExtended,
-  TimeSeriesData,
-  defaultDeviceData,
-  defaultHealthData,
-  defaultFertilityStatus,
-  maxDate,
   PeriodValue,
+  TimeSeriesData,
   categories,
+  defaultDeviceData,
+  defaultFertilityStatus,
+  defaultHealthData,
+  maxDate,
 } from "./constants";
 
 export const useOverviewData = () => {
@@ -91,14 +91,14 @@ export const useOverviewData = () => {
     setFertilityData([
       {
         title: "In-Heat",
-        percentage: ((data.pigFertilityStats["InHeat"] ?? 0) / (data.pigStats.totalPigs ?? 1)) * 100,
+        percentage: ((data.pigFertilityStats.InHeat ?? 0) / (data.pigStats.totalPigs ?? 1)) * 100,
         current: data.pigFertilityStats["InHeat"] ?? 0,
         allowed: data.pigStats.totalPigs ?? 100,
       },
       {
         title: "Pre-Heat",
-        percentage: ((data.pigFertilityStats["PreHeat"] ?? 0) / (data.pigStats.totalPigs ?? 1)) * 100,
-        current: data.pigFertilityStats["PreHeat"] ?? 0,
+        percentage: ((data.pigFertilityStats.PreHeat ?? 0) / (data.pigStats.totalPigs ?? 1)) * 100,
+        current: data.pigFertilityStats.PreHeat ?? 0,
         allowed: data.pigStats.totalPigs ?? 100,
       },
       {
