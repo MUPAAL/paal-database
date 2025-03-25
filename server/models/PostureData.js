@@ -13,7 +13,7 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const PigPostureSchema = new Schema({
-  pigId: { type: Schema.Types.ObjectId, ref: 'Pig', required: true },
+  pigId: { type: Number, required: true },
   timestamp: { type: Date, default: Date.now },
   score: { type: Number, min: 0, max: 5, required: true }
 });

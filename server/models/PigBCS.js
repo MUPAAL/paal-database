@@ -13,7 +13,7 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const PigBCSSchema = new Schema({
-  pigId: { type: Schema.Types.ObjectId, ref: 'Pig', required: true },
+  pigId: { type: Number, required: true },
   timestamp: { type: Date, default: Date.now },
   score: { type: Number, required: true }
 });

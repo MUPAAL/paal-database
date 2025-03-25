@@ -4,8 +4,7 @@ const { Schema } = mongoose;
 
 const PigHealthStatusSchema = new Schema({
   pigId: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'Pig', 
+    type: Number, 
     required: true,
     index: true 
   },
