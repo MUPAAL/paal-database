@@ -18,4 +18,6 @@ const PigPostureSchema = new Schema({
   score: { type: Number, min: 0, max: 5, required: true }
 });
 
+PigPostureSchema.index({ pigId: 1 });
+
 module.exports = mongoose.model('PigPosture', PigPostureSchema);

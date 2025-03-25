@@ -8,4 +8,6 @@ const PigVulvaSwellingSchema = new Schema({
   value: { type: String, enum: ['low', 'moderate', 'high'], required: true }
 });
 
+PigVulvaSwellingSchema.index({ pigId: 1 });
+
 module.exports = mongoose.model('PigVulvaSwelling', PigVulvaSwellingSchema);

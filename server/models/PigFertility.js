@@ -11,4 +11,6 @@ const PigFertilitySchema = new Schema({
   }
 });
 
+PigFertilitySchema.index({ pigId: 1 });
+
 module.exports = mongoose.model('PigFertility', PigFertilitySchema);

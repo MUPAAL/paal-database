@@ -7,4 +7,6 @@ const PigBreathRateSchema = new Schema({
   rate: { type: Number, required: true }
 });
 
+PigBreathRateSchema.index({ pigId: 1 });
+
 module.exports = mongoose.model('PigBreathRate', PigBreathRateSchema);

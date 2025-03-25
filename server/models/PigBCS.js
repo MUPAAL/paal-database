@@ -18,4 +18,6 @@ const PigBCSSchema = new Schema({
   score: { type: Number, required: true }
 });
 
+PigBCSSchema.index({ pigId: 1 });
+
 module.exports = mongoose.model('PigBCS', PigBCSSchema);
