@@ -22,6 +22,7 @@ import api from "@/lib/axios"
 import { cx } from "@/lib/utils"
 import { Download } from "lucide-react"
 import { Fragment, useEffect, useState } from "react"
+import { FarmerManagementDrawer } from "./FarmerManagementDrawer"
 
 const colorClasses = [
     "bg-blue-500 dark:bg-blue-500",
@@ -73,6 +74,7 @@ export default function Overview() {
     const [selectedFarm, setSelectedFarm] = useState<string>("all")
     const [selectedBarn, setSelectedBarn] = useState<string>("all")
     const [searchTerm, setSearchTerm] = useState("")
+    const [isOpen, setIsOpen] = useState(false)
 
     useEffect(() => {
         const fetchStallData = async () => {
@@ -139,7 +141,9 @@ export default function Overview() {
         })).filter(farm => farm.barns?.length > 0)
 
     return (
+
         <section aria-label="Overview Table">
+            <FarmerManagementDrawer open={isOpen} onOpenChange={() => setIsOpen(false)} />
             <div className="flex flex-col justify-between gap-2 px-4 py-6 sm:flex-row sm:items-center sm:p-6">
                 <Input
                     type="search"
@@ -178,6 +182,7 @@ export default function Overview() {
                     <Button
                         variant="secondary"
                         className="w-full gap-2 py-1.5 text-base sm:w-fit sm:text-sm"
+                        onClick={() => setIsOpen(true)}
                     >
                         <Download
                             className="-ml-0.5 size-4 shrink-0 text-gray-400 dark:text-gray-600"
@@ -269,6 +274,10 @@ export default function Overview() {
                     </TableBody>
                 </Table>
             </TableRoot>
+
+
         </section>
+
+
     )
 }

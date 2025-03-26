@@ -4,6 +4,7 @@ const Barn = require('../models/Barn')
 const Stall = require('../models/Stall')
 const Pig = require('../models/Pig')
 const rateLimit = require('express-rate-limit')
+const Farm = require('../models/Farm')
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -180,16 +181,21 @@ function calculateDateRange(range) {
 }
 
 // GET barns by farm ID
-router.get('/farm/:farmId', async (req, res) => {
+router.get('/farm/:id', async (req, res) => {
   try {
-    const barns = await Barn.find({ farmId: req.params.farmId })
-      .populate({
-        path: 'stalls',
-        select: 'name pigCount'
-      })
-      .sort({ name: 1 })
-
-    res.json(barns)
+    const farm = await Farm.findById(req.params.id);
+    if (!farm) {
+      return res.status(404).json({ error: 'Farm not found' });
+    }
+    // Get all related data in parallel
+    const [barns, stalls] = await Promise.all([
+      Barn.find({ farmId: farm._id }).select('_id name farmId '),
+      Stall.find({ farmId: farm._id }).select('name barnId _id'),
+    ]);
+    res.json(
+      //...barns.toObject(), 
+      [...barns]
+    );
   } catch (error) {
     console.error('Error fetching barns by farm:', error)
     res.status(500).json({ error: 'Failed to fetch barns' })
