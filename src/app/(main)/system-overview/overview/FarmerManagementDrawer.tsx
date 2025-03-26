@@ -222,21 +222,23 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls }: FirstPagePr
                                     <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">N/a Stalls</span>
                                     <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
                                         <RiDeleteBin4Fill className="size-5 shrink-0" />
-                                        <span className="sr-only">Remove {}</span>
+                                        <span className="sr-only">Remove { }</span>
                                     </Button>
                                 </div>
                             </li>
                         </ul>
 
-
+                        <div className="mt-10 flex w-full items-center space-x-2 sm:mt-0">
+                            <Button variant="ghost" className="text-base size-10 sm:text-md"> <ArrowUpWideNarrow /> </Button>
+                            <Input id="inviteEmail" placeholder="Add Stall..." type="barn" />
+                        </div>
 
                     </FormField>
+
+
                 )}
 
-                <div className="mt-10 flex w-full items-center space-x-2 sm:mt-0">
-                    <Button variant="ghost" className="text-base size-10 sm:text-md"> <ArrowUpWideNarrow /> </Button>
-                    <Input id="inviteEmail" placeholder="Add Stall..." type="barn" />
-                </div>
+
             </DrawerBody>
         </>
     );
