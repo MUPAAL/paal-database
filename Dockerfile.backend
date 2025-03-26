@@ -1,14 +1,17 @@
-# Use an official Node runtime as a base image
-FROM node:18
+FROM node:20-alpine
+
+# Enable Corepack and install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Set the working directory inside the container
 WORKDIR /usr/src/app
 
 # Copy only package files first for caching dependencies
 COPY package*.json ./
+copy pnpm-lock.yaml .
 
 # Install only production dependencies (adjust if you need dev dependencies)
-RUN npm install
+RUN pnpm install --frozen-lockfile
 
 # Copy the server code (assuming your Node back end is in the "server" folder)
 COPY server ./server
@@ -17,4 +20,4 @@ COPY server ./server
 EXPOSE 5005
 
 # Start the back end using your start script
-CMD ["npm", "run", "dev:backend"]
+CMD ["pnpm", "run", "dev:backend"]

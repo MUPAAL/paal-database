@@ -1,10 +1,22 @@
 "use client";
 
-import { KpiEntry } from "@/app/(main)/overview/page";
 import { Badge } from "@/components/Badge";
-import { ProgressBar } from "@/components/ProgressBar";
 import { TabNavigation, TabNavigationLink } from "@/components/TabNavigation";
+import {
+    ChartConfig,
+    ChartContainer,
+    ChartTooltip
+} from "@/components/ui/chart";
 import Link from "next/link";
+import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts";
+
+
+export type KpiEntry = {
+    title: string;
+    percentage: number;
+    current: number;
+    allowed: number;
+};
 
 export type BarnStallCardProps = {
     title: string;
@@ -15,9 +27,9 @@ export type BarnStallCardProps = {
     ctaText: string;
     ctaLink: string;
     data: KpiEntry[];
-    barns: { title: string; href: string }[]; // List of barns for navigation
-    selectedBarn: string | null; // Currently selected barn
-    onBarnSelect: (barn: string) => void; // Handler for barn selection
+    barns: { title: string; href: string }[];
+    selectedBarn: string | null;
+    onBarnSelect: (barn: string) => void;
 };
 
 export function BarnStallCard({
@@ -33,6 +45,21 @@ export function BarnStallCard({
     selectedBarn,
     onBarnSelect,
 }: BarnStallCardProps) {
+    // Transform KPI data into radar chart format
+    const radarChartData = data.map(item => ({
+        category: item.title,
+        value: item.percentage,
+        current: item.current,
+        allowed: item.allowed,
+    }));
+
+    const chartConfig = {
+        value: {
+            label: "Utilization",
+            color: "hsl(var(--chart-1))",
+        },
+    } satisfies ChartConfig;
+
     return (
         <div className="flex flex-col justify-between">
             <div>
@@ -60,7 +87,7 @@ export function BarnStallCard({
                             <Link
                                 href="#"
                                 onClick={(e) => {
-                                    e.preventDefault(); // Prevent default link behavior
+                                    e.preventDefault();
                                     onBarnSelect(barn.title);
                                 }}
                             >
@@ -70,39 +97,59 @@ export function BarnStallCard({
                     ))}
                 </TabNavigation>
 
-                {/* Stall Data */}
-                <ul role="list" className="mt-4 space-y-5">
-                    {data.map((item) => (
-                        <li key={item.title}>
-                            <p className="flex justify-between text-sm">
-                                <span className="font-medium text-gray-900 dark:text-gray-50">
-                                    {item.title}
-                                </span>
-                                <span className="font-medium text-gray-900 dark:text-gray-50">
-                                    {item.current}
-                                    <span className="font-normal text-gray-500">
-                                        /{item.allowed}
-                                        {item.unit}
-                                    </span>
-                                </span>
-                            </p>
-                            <ProgressBar
-                                value={item.percentage}
-                                className="mt-2 [&>*]:h-1.5"
+                {/* Radar Chart */}
+                <div className="mt-4 ">
+                    <ChartContainer
+                        config={chartConfig}
+                        className="m-auto aspect-square max-h-[250px]"
+                    >
+                        <RadarChart data={radarChartData}>
+                            <ChartTooltip
+                                cursor={false}
+                                content={<CustomTooltipContent />}
                             />
-                        </li>
-                    ))}
-                </ul>
+                            <PolarGrid
+                                className="fill-[--color-value] opacity-20"
+                                gridType="circle"
+                            />
+                            <PolarAngleAxis dataKey="category" />
+                            <Radar
+                                dataKey="value"
+                                fill="var(--color-value)"
+                                fillOpacity={0.5}
+                            />
+                        </RadarChart>
+                    </ChartContainer>
+                </div>
+                {/* Call-to-Action */}
+                <div>
+                    <p className="mt-6 text-xs text-gray-500">
+                        {ctaDescription}{" "}
+                        <a href={ctaLink} className="text-indigo-600 dark:text-indigo-400">
+                            {ctaText}
+                        </a>
+                    </p>
+                </div>
             </div>
 
-            {/* Call-to-Action */}
-            <div>
-                <p className="mt-6 text-xs text-gray-500">
-                    {ctaDescription}{" "}
-                    <a href={ctaLink} className="text-indigo-600 dark:text-indigo-400">
-                        {ctaText}
-                    </a>
-                </p>
+
+        </div>
+    );
+}
+
+// Custom tooltip to show detailed information
+function CustomTooltipContent({ active, payload }: any) {
+    if (!active || !payload?.length) return null;
+
+    const data = payload[0].payload;
+    return (
+        <div className="rounded-md border bg-background p-4 text-sm shadow-sm">
+            <div className="font-medium">{data.category}</div>
+            <div className="text-muted-foreground">
+                {data.current} / {data.allowed} Pigs
+            </div>
+            <div className="font-medium mt-1">
+                {parseInt(((data.current / data.allowed) * 100).toString(), 10)}% utilization
             </div>
         </div>
     );

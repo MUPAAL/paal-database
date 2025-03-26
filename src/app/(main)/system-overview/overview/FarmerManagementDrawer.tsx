@@ -12,11 +12,11 @@ import {
 import { Input } from "@/components/Input"
 import { Label } from "@/components/Label"
 import api from "@/lib/axios"
-import axios from "axios"
 import React, { useEffect, useState } from "react"
 
 
-import { RiDeleteBin4Fill } from '@remixicon/react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/Dialog"
+import { RiAddLine, RiDeleteBin4Fill } from '@remixicon/react'
 import { ArrowUpWideNarrow, GitBranch, MapPinHouse } from "lucide-react"
 
 // -------------------------
@@ -45,8 +45,13 @@ type Barn = {
 type Stall = {
     _id: string
     name: string
-    barnId: string
+    barnId: {
+        _id: string
+        name: string
+    }
     farmId: string
+    createdAt: string
+    updatedAt: string
 }
 
 // -------------------------
@@ -87,11 +92,23 @@ interface FirstPageProps {
     farms: Farm[]
     barns: Barn[]
     stalls: Stall[]
+    onStallClick: (stallId: string) => void
+    refreshData: () => void
+
 }
 
-const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls }: FirstPageProps) => {
+
+const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick, refreshData }: FirstPageProps) => {
     const [selectedFarmId, setSelectedFarmId] = useState<string | null>(formData.farm);
     const [selectedBarnId, setSelectedBarnId] = useState<string | null>(formData.barn);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedStallId, setSelectedStallId] = useState<string | null>(null);
+    const [newFarmName, setNewFarmName] = useState("");
+    const [newBarnName, setNewBarnName] = useState("");
+    const [newStallName, setNewStallName] = useState("");
+    const [isAddingFarm, setIsAddingFarm] = useState(false);
+    const [isAddingBarn, setIsAddingBarn] = useState(false);
+    const [isAddingStall, setIsAddingStall] = useState(false);
 
     const handleSelectFarm = (farmId: string) => {
         setSelectedFarmId(farmId);
@@ -104,17 +121,60 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls }: FirstPagePr
         onUpdateForm({ barn: barnId, stall: "" });
     };
 
-
-    // 👇 Dynamically derive `barns` from `farms` to match your filtering code
-    const barns1 = farms.flatMap(farm => farm.barns || []);
+    const handleMoreStalls = (stallId: string) => {
+        setSelectedStallId(stallId);
+        setIsDialogOpen(true);
+    };
 
     const filteredBarns = barns.filter(barn => barn.farmId == formData.farm);
-    const filteredStalls = stalls.filter(stall => stall.barnId === formData.barn);
     const selectedBarn = filteredBarns.find(barn => barn._id === formData.barn);
 
+    const handleAddFarm = async () => {
+        if (!newFarmName) return;
+        try {
+            await api.post('/farms', {
+                name: newFarmName,
+                location: ""
+            });
+            setNewFarmName("");
+            setIsAddingFarm(false);
+            refreshData();
+        } catch (error) {
+            console.error("Error adding farm:", error);
+        }
+    };
 
-    console.log("selectedFarmId", barns1);
-    console.log("selectedBarnId", barns);
+    const handleAddBarn = async () => {
+        if (!newBarnName || !formData.farm) return;
+        try {
+            await api.post('/barns', {
+                name: newBarnName,
+                farmId: formData.farm
+            });
+            setNewBarnName("");
+            setIsAddingBarn(false);
+            refreshData();
+        } catch (error) {
+            console.error("Error adding barn:", error);
+        }
+    };
+
+    const handleAddStall = async () => {
+        if (!newStallName || !formData.barn || !formData.farm) return;
+        try {
+            await api.post('/stalls', {
+                name: newStallName,
+                barnId: formData.barn,
+                farmId: formData.farm
+            });
+            setNewStallName("");
+            setIsAddingStall(false);
+            refreshData();
+        } catch (error) {
+            console.error("Error adding stall:", error);
+        }
+    };
+
     return (
         <>
             <DrawerHeader>
@@ -143,7 +203,9 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls }: FirstPagePr
                                         <span className="truncate text-gray-700 dark:text-gray-300">{farm.name}</span>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">N/a Barns</span>
+                                        <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                                            {farm.barns?.length || 0} Barns
+                                        </span>
                                         <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
                                             <RiDeleteBin4Fill className="size-5 shrink-0" />
                                             <span className="sr-only">Remove {farm.name}</span>
@@ -154,19 +216,33 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls }: FirstPagePr
                         })}
                     </ul>
 
-                </FormField>
+                    <div className="mt-4 flex w-full items-center space-x-2">
+                        {isAddingFarm ? (
+                            <>
+                                <div className="mt-10 flex w-full items-center space-x-2 sm:mt-0">
 
-                <div className="mt-10 flex w-full items-center space-x-2 sm:mt-0">
-                    <Button variant="ghost" className="text-base size-10 sm:text-md"> <ArrowUpWideNarrow /> </Button>
-                    <Input id="farm" placeholder="Add farm..." type="farm" />
-
-                </div>
+                                    <Button onClick={handleAddFarm} variant="ghost" className="text-base size-10 sm:text-md"> <ArrowUpWideNarrow /> </Button>
+                                    <Input
+                                        value={newFarmName}
+                                        onChange={(e) => setNewFarmName(e.target.value)}
+                                        placeholder="Add Farm..."
+                                        type="barn"
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <Button variant="secondary" onClick={() => setIsAddingFarm(true)} className="w-full">
+                                <RiAddLine className="mr-2 size-4" />
+                                Add New Farm
+                            </Button>
+                        )}
+                    </div>
+                </FormField >
 
                 {selectedFarmId && (
                     <>
                         <FormField label="Barns">
                             <ul role="list" className="mt-2 divide-y divide-gray-200 dark:divide-gray-800">
-
                                 {filteredBarns.map(barn => {
                                     const isSelected = barn._id === selectedBarnId;
                                     return (
@@ -175,7 +251,6 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls }: FirstPagePr
                                             onClick={() => handleSelectBarn(barn._id)}
                                             className={`flex cursor-pointer items-center justify-between space-x-4 py-2.5 text-sm transition ${isSelected ? "bg-blue-100 dark:bg-blue-900 border-blue-500 rounded-md pl-2" : "hover:bg-gray-100 rounded-md dark:hover:bg-gray-800"}`}
                                         >
-
                                             <div className="flex items-center space-x-4 truncate">
                                                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-white text-xs uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-500">
                                                     <MapPinHouse className="size-5" />
@@ -183,66 +258,141 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls }: FirstPagePr
                                                 <span className="truncate text-gray-700 dark:text-gray-300">{barn.name}</span>
                                             </div>
                                             <div className="flex items-center space-x-2">
-                                                <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">N/a Stalls</span>
+                                                <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                                                    {stalls.filter(s => s.barnId._id === barn._id).length} Stalls
+                                                </span>
                                                 <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
                                                     <RiDeleteBin4Fill className="size-5 shrink-0" />
-                                                    <span className="sr-only">Remove {selectedBarn?.name}</span>
+                                                    <span className="sr-only">Remove {barn.name}</span>
                                                 </Button>
                                             </div>
                                         </li>
-
                                     );
                                 })}
-
                             </ul>
+                            <div className="mt-4 flex w-full items-center space-x-2">
+                                {isAddingBarn ? (
+                                    <>
+                                        <div className="mt-10 flex w-full items-center space-x-2 sm:mt-0">
+                                            <Button onClick={handleAddBarn} variant="ghost" className="text-base size-10 sm:text-md"> <ArrowUpWideNarrow /> </Button>
+                                            <Input
+                                                value={newBarnName}
+                                                onChange={(e) => setNewBarnName(e.target.value)}
+                                                placeholder="Add Barn..."
+                                                type="barn"
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <Button variant="secondary" onClick={() => setIsAddingBarn(true)} className="w-full">
+                                        <RiAddLine className="mr-2 size-4" />
+                                        Add New Barn
+                                    </Button>
+                                )}
+                            </div>
 
                         </FormField>
-
-                        <div className="mt-10 flex w-full items-center space-x-2 sm:mt-0">
-                            <Button variant="ghost" className="text-base size-10 sm:text-md"> <ArrowUpWideNarrow /> </Button>
-                            <Input id="inviteEmail" placeholder="Add Barn..." type="barn" />
-                        </div>
                     </>
-                )}
+                )
+                }
 
-                {selectedBarnId && (
-                    <FormField label="Stalls">
-                        <ul role="list" className="mt-2 divide-y divide-gray-200 dark:divide-gray-800">
-                            <li
-                                className={`flex items-center justify-between space-x-4 py-2.5 text-sm transition `}
-                            >
+                {
+                    selectedBarnId && (
+                        <FormField label="Stalls">
+                            <ul role="list" className="mt-2 divide-y divide-gray-200 dark:divide-gray-800">
+                                {stalls.length > 4 ? (
+                                    <>
+                                        {stalls.slice(0, 3).map(stall => (
+                                            <li
+                                                key={stall._id}
+                                                className={`flex items-center justify-between space-x-4 py-2.5 text-sm transition`}
+                                            >
+                                                <div className="flex items-center space-x-4 truncate">
+                                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-white text-xs uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-500">
+                                                        <MapPinHouse className="size-5" />
+                                                    </span>
+                                                    <span className="truncate text-gray-700 dark:text-gray-300">{stall.name}</span>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
+                                                        <RiDeleteBin4Fill className="size-5 shrink-0" />
+                                                        <span className="sr-only">Remove {stall.name}</span>
+                                                    </Button>
+                                                </div>
+                                            </li>
+                                        ))}
+                                        <li className={`flex items-center justify-between space-x-4 py-2.5 text-sm transition`}>
+                                            <div onClick={() => onStallClick(stalls[stalls.length - 1]._id)} className="cursor-pointer mx-auto">
+                                                ...
+                                            </div>
+                                        </li>
+                                        <li
+                                            key={stalls[stalls.length - 1]._id}
+                                            className={`flex items-center justify-between space-x-4 py-2.5 text-sm transition`}
+                                        >
+                                            <div className="flex items-center space-x-4 truncate">
+                                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-white text-xs uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-500">
+                                                    <MapPinHouse className="size-5" />
+                                                </span>
+                                                <span className="truncate text-gray-700 dark:text-gray-300">{stalls[stalls.length - 1].name}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
+                                                    <RiDeleteBin4Fill className="size-5 shrink-0" />
+                                                    <span className="sr-only">Remove {stalls[stalls.length - 1].name}</span>
+                                                </Button>
+                                            </div>
+                                        </li>
+                                    </>
+                                ) : (
+                                    stalls.map(stall => (
+                                        <li
+                                            key={stall._id}
+                                            className={`flex cursor-pointer items-center justify-between space-x-4 py-2.5 text-sm transition`}
+                                        >
+                                            <div className="flex items-center space-x-4 truncate">
+                                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-white text-xs uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-500">
+                                                    <MapPinHouse className="size-5" />
+                                                </span>
+                                                <span className="truncate text-gray-700 dark:text-gray-300">{stall.name}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
+                                                    <RiDeleteBin4Fill className="size-5 shrink-0" />
+                                                    <span className="sr-only">Remove {stall.name}</span>
+                                                </Button>
+                                            </div>
+                                        </li>
+                                    ))
+                                )}
+                            </ul>
 
-                                <div className="flex items-center space-x-4 truncate">
-                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-white text-xs uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-500">
-                                        <MapPinHouse className="size-5" />
-                                    </span>
-                                    <span className="truncate text-gray-700 dark:text-gray-300">{selectedBarn?.name}</span>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">N/a Stalls</span>
-                                    <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
-                                        <RiDeleteBin4Fill className="size-5 shrink-0" />
-                                        <span className="sr-only">Remove { }</span>
-                                    </Button>
-                                </div>
-                            </li>
-                        </ul>
+                            <div className="mt-4 flex w-full items-center space-x-2">
+                                {isAddingStall ? (
+                                    ""
+                                ) : (
+                                    ""
+                                )}
+                            </div>
 
-                        <div className="mt-10 flex w-full items-center space-x-2 sm:mt-0">
-                            <Button variant="ghost" className="text-base size-10 sm:text-md"> <ArrowUpWideNarrow /> </Button>
-                            <Input id="inviteEmail" placeholder="Add Stall..." type="barn" />
-                        </div>
+                            <div className="mt-10 flex w-full items-center space-x-2 sm:mt-0">
+                                <Button onClick={handleAddStall} variant="ghost" className="text-base size-10 sm:text-md"> <ArrowUpWideNarrow /> </Button>
+                                <Input
+                                    value={newStallName}
+                                    onChange={(e) => setNewStallName(e.target.value)}
+                                    placeholder="Add Stall..."
+                                    type="barn"
+                                />
+                            </div>
 
-                    </FormField>
-
-
-                )}
-
-
-            </DrawerBody>
+                        </FormField>
+                    )
+                }
+            </DrawerBody >
         </>
     );
-};
+}
+
 
 // -------------------------
 // Second Page: Additional Pig Data Editing
@@ -391,6 +541,9 @@ export function FarmerManagementDrawer({ open, onOpenChange }: PigDrawerProps) {
     const [farms, setFarms] = useState<Farm[]>([])
     const [barns, setBarns] = useState<Barn[]>([])
     const [stalls, setStalls] = useState<Stall[]>([])
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [selectedStall, setSelectedStall] = useState<Stall | null>(null);
+
     // Fetch farms
     useEffect(() => {
         api.get('/farms')
@@ -412,14 +565,46 @@ export function FarmerManagementDrawer({ open, onOpenChange }: PigDrawerProps) {
 
     // Fetch all stalls
     useEffect(() => {
-        api.get('/stalls')
-            .then((res) => setStalls(res.data))
-            .catch(console.error);
+        if (formData.barn) {
+            api.get(`/stalls/barn/${formData.barn}`)
+                .then((res) => setStalls(res.data))
+                .catch(console.error);
+        } else {
+            setStalls([]);
+        }
+    }, [formData.barn]);
+
+    const refreshData = async () => {
+        try {
+            const farmsRes = await api.get('/farms');
+            setFarms(farmsRes.data);
+
+            if (formData.farm) {
+                const barnsRes = await api.get(`/barns/farm/${formData.farm}`);
+                setBarns(barnsRes.data);
+            }
+
+            if (formData.barn) {
+                const stallsRes = await api.get(`/stalls/barn/${formData.barn}`);
+                setStalls(stallsRes.data);
+            }
+        } catch (error) {
+            console.error("Error refreshing data:", error);
+        }
+    };
+
+    useEffect(() => {
+        refreshData();
     }, []);
 
     const handleUpdateForm = (updates: Partial<PigFormData>) => {
         setFormData((prev) => ({ ...prev, ...updates }))
     }
+
+    const handleStallClick = (stallId: string) => {
+        setIsDialogOpen(true);
+
+    };
 
     const handleSubmit = async () => {
         setIsSubmitting(true)
@@ -436,7 +621,7 @@ export function FarmerManagementDrawer({ open, onOpenChange }: PigDrawerProps) {
                     stallId: formData.stall,
                 },
             }
-            await axios.post("/api/pigs", preparedData)
+            await api.post("/pigs", preparedData)
             console.log("Pig data submitted:", preparedData)
             onOpenChange(false)
         } catch (error) {
@@ -456,6 +641,8 @@ export function FarmerManagementDrawer({ open, onOpenChange }: PigDrawerProps) {
                         farms={farms}
                         barns={barns}
                         stalls={stalls}
+                        onStallClick={handleStallClick}
+                        refreshData={refreshData}
                     />
                 )
             case 2:
@@ -506,14 +693,56 @@ export function FarmerManagementDrawer({ open, onOpenChange }: PigDrawerProps) {
     }
 
     return (
-        <Drawer open={open} onOpenChange={onOpenChange}>
-            <DrawerContent className="overflow-x-hidden sm:max-w-lg">
-                {renderPage()}
-                <DrawerFooter className="-mx-6 -mb-2 gap-2 px-6 sm:justify-between">
-                    {renderFooter()}
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
+        <> {isDialogOpen ? (
+            <div className="flex items-center justify-center py-24">
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button variant="secondary">Open Dialog</Button>
+                    </DialogTrigger>
+
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Pigs in this Stall</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                            {(
+                                stalls.map(stall => {
+                                    return (
+                                        <li
+                                            key={stall._id}
+                                            className={`flex cursor-pointer items-center justify-between space-x-4 py-2.5 text-sm transition`}
+                                        >
+                                            <div className="flex items-center space-x-4 truncate">
+                                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-white text-xs uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-500">
+                                                    <MapPinHouse className="size-5" />
+                                                </span>
+                                                <span className="truncate text-gray-700 dark:text-gray-300">{stall.name}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">N/a Stalls</span>
+                                                <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
+                                                    <RiDeleteBin4Fill className="size-5 shrink-0" />
+                                                    <span className="sr-only">Remove {stall.name}</span>
+                                                </Button>
+                                            </div>
+                                        </li>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
+        ) : null}
+            <Drawer open={open} onOpenChange={onOpenChange}>
+                <DrawerContent className="overflow-x-hidden sm:max-w-lg">
+                    {renderPage()}
+                    <DrawerFooter className="-mx-6 -mb-2 gap-2 px-6 sm:justify-between">
+                        {renderFooter()}
+                    </DrawerFooter>
+                </DrawerContent>
+            </Drawer>
+        </>
     )
 }
 
