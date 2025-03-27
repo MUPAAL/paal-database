@@ -29,12 +29,12 @@ const navigation = [
     icon: House,
     notifications: false,
   },
-  {
-    name: "Notifications",
-    href: "",
-    icon: PackageSearch,
-    notifications: 5,
-  },
+  // {
+  //   name: "Notifications",
+  //   href: "",
+  //   icon: PackageSearch,
+  //   notifications: 5,
+  // },
 ] as const
 
 const navigation2 = [
