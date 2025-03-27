@@ -130,8 +130,12 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
     const selectedBarn = filteredBarns.find(barn => barn._id === formData.barn);
 
     const handleAddFarm = async () => {
-        if (!newFarmName) return;
+        if (!newFarmName) {
+            console.log(newFarmName);
+            return;
+        }
         try {
+            console.log(newFarmName);
             await api.post('/farms', {
                 name: newFarmName,
                 location: ""

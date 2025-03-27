@@ -233,9 +233,8 @@ router.get('/:id', async (req, res) => {
 // CREATE new farm
 router.post('/', async (req, res) => {
   try {
-    const name = req.body;
-    const location = ""; 
-    
+    const {name, location}  = req.body;
+
     if (!name) {
       return res.status(400).json({ error: 'Name and location are required' });
     }

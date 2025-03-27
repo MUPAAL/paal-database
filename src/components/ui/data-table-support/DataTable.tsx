@@ -1,6 +1,7 @@
 "use client"
 import { Button } from "@/components/Button"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/Dialog"
+import { Divider } from "@/components/Divider"
 import { Input } from "@/components/Input"
 import { Label } from "@/components/Label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/Select"
@@ -72,12 +73,15 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
 
   return (
     <div className="mt-8 space-y-3">
-        <div className="flex justify-end">
-          <Button onClick={() => setCreateDialogOpen(true)} className="flex items-center gap-2 text-base sm:text-sm">
-            Add Device
-            <RiAddLine className="-mr-0.5 size-5 shrink-0" aria-hidden="true" />
-          </Button>
-        </div>
+
+      <div className="flex justify-end">
+        <h1 className="my-auto mx-auto font-bold -left justify-normal"> Device Data</h1>
+        <Button variant="secondary" onClick={() => setCreateDialogOpen(true)} className="flex items-center gap-2 text-base sm:text-sm">
+          Add Device
+          <RiAddLine className="-mr-0.5 size-5 shrink-0" aria-hidden="true" />
+        </Button>
+      </div>
+      <Divider />
       <div className="relative overflow-hidden overflow-x-auto">
         <Table>
           <TableHead>
@@ -100,8 +104,11 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
                     )}
                   </TableHeaderCell>
                 ))}
+
               </TableRow>
+
             ))}
+
           </TableHead>
           <TableBody>
             {table.getRowModel().rows.map((row) => (
@@ -185,9 +192,9 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
               </div>
             </div>
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="secondary" 
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => setCreateDialogOpen(false)}
                 disabled={isLoading}
               >

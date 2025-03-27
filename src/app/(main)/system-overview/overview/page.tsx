@@ -166,7 +166,7 @@ export default function Overview() {
                             ))}
                         </SelectContent>
                     </Select>
-                    <Select value={selectedBarn} onValueChange={setSelectedBarn}>
+                    {/* <Select value={selectedBarn} onValueChange={setSelectedBarn}>
                         <SelectTrigger className="w-full py-1.5 sm:w-44">
                             <SelectValue placeholder="Filter by barn..." />
                         </SelectTrigger>
@@ -178,7 +178,7 @@ export default function Overview() {
                                 </SelectItem>
                             ))}
                         </SelectContent>
-                    </Select>
+                    </Select> */}
                     <Button
                         variant="secondary"
                         className="w-full gap-2 py-1.5 text-base sm:w-fit sm:text-sm"
@@ -235,7 +235,7 @@ export default function Overview() {
                                         {barn.stalls.map((stall, index) => (
                                             <TableRow key={index}>
                                                 <TableCell></TableCell>
-                                                <TableCell>Stall {index + 1}</TableCell>
+                                                <TableCell>{stall.name}</TableCell>
                                                 <TableCell>{stall.totalPigs}</TableCell>
                                                 <TableCell>{stall.pigsToBreed}</TableCell>
                                                 <TableCell>{stall.unhealthyPigs}</TableCell>
@@ -265,12 +265,20 @@ export default function Overview() {
                                                         {stall.status}
                                                     </Badge>
                                                 </TableCell>
+
+
                                             </TableRow>
+
                                         ))}
                                     </Fragment>
                                 ))}
+
+
                             </Fragment>
+
                         ))}
+
+
                     </TableBody>
                 </Table>
             </TableRoot>
