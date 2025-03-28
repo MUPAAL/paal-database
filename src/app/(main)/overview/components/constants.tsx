@@ -32,6 +32,7 @@ export type KpiEntryExtended = {
   parent?: string;
 };
 
+{/* give me code to fetch the last updated unit of data so the dates arn't empty*/ }
 export const maxDate = new Date();
 
 export const defaultDeviceData: KpiEntry[] = [

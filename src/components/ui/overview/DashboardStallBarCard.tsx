@@ -78,23 +78,73 @@ export function BarnStallCard({
 
                 {/* Barn Navigation Toggle */}
                 <TabNavigation className="mt-4 gap-x-4">
-                    {barns.map((barn) => (
-                        <TabNavigationLink
-                            key={barn.title}
-                            asChild
-                            active={selectedBarn === barn.title}
-                        >
-                            <Link
-                                href="#"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    onBarnSelect(barn.title);
-                                }}
+                    {/* Conditional logic can be inserted here using a ternary operator or logical && */}
+                    {barns.length > 4 ? (
+                        <>
+                            {barns.slice(0, 3).map((barn) => (
+                                <TabNavigationLink
+                                    key={barn.title}
+                                    asChild
+                                    active={selectedBarn === barn.title}
+                                >
+                                    <Link
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            onBarnSelect(barn.title);
+                                        }}
+                                    >
+                                        {barn.title}
+                                    </Link>
+                                </TabNavigationLink>
+                            ))}
+                            <span className="my-auto inset-y-4 font-mono">  ... </span>
+                            <TabNavigationLink
+                                key={barns[barns.length - 1].title}
+                                asChild
+                                active={selectedBarn === barns[barns.length - 1].title}
                             >
-                                {barn.title}
-                            </Link>
-                        </TabNavigationLink>
-                    ))}
+
+
+                                <Link
+                                    href="#"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        onBarnSelect(barns[barns.length - 1].title);
+                                    }}
+                                >
+                                    {barns[barns.length - 1].title}
+                                </Link>
+                            </TabNavigationLink>
+
+
+
+                        </>
+
+                    ) : (
+                        <>
+                            {barns.map((barn) => (
+                                <TabNavigationLink
+                                    key={barn.title}
+                                    asChild
+                                    active={selectedBarn === barn.title}
+                                >
+                                    <Link
+                                        href="#"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            onBarnSelect(barn.title);
+                                        }}
+                                    >
+                                        {barn.title}
+                                    </Link>
+                                </TabNavigationLink>
+                            ))}
+                        </>
+                    )}
+
+
+
                 </TabNavigation>
 
                 {/* Radar Chart */}
@@ -117,6 +167,7 @@ export function BarnStallCard({
                                 dataKey="value"
                                 fill="var(--color-value)"
                                 fillOpacity={0.5}
+                                isAnimationActive={false}
                             />
                         </RadarChart>
                     </ChartContainer>

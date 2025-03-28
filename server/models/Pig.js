@@ -17,9 +17,9 @@ const PigSchema = new Schema({
   breed: { type: String },
   age: { type: Number, min: 0 },
   currentLocation: {
-    farmId: { type: Schema.Types.ObjectId, ref: 'Farm', required: true },
-    barnId: { type: Schema.Types.ObjectId, ref: 'Barn', required: true },
-    stallId: { type: Schema.Types.ObjectId, ref: 'Stall', required: true }
+    farmId: { type: Schema.Types.ObjectId, ref: 'Farm' },
+    barnId: { type: Schema.Types.ObjectId, ref: 'Barn'},
+    stallId: { type: Schema.Types.ObjectId, ref: 'Stall' }
   },
   active: { type: Boolean, default: true }
 }, { 
@@ -31,7 +31,7 @@ const PigSchema = new Schema({
 // Virtual for latest health status
 PigSchema.virtual('healthStatus', {
   ref: 'PigHealthStatus',
-  localField: '_id',
+  localField: 'pigId',
   foreignField: 'pigId',
   justOne: true,
   options: { sort: { timestamp: -1 }, limit: 1 }

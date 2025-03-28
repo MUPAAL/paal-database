@@ -10,20 +10,29 @@ import {
   categories,
   defaultDeviceData,
   defaultFertilityStatus,
-  defaultHealthData,
-  maxDate,
+  defaultHealthData
 } from "./constants";
 
+export function getLastMetricDate(data: TimeSeriesData): string | null {
+  const dates = Object.keys(data);
+  if (dates.length === 0) return null;
+
+  const sortedDates = dates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+  return sortedDates[0];
+}
+
 export const useOverviewData = () => {
+  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData>({});
+  const latestDateRaw = getLastMetricDate(timeSeriesData);
+  const latestDate = latestDateRaw ? getLastMetricDate(timeSeriesData) : new Date();
   const [selectedDates, setSelectedDates] = useState({
-    from: subDays(maxDate, 7),
-    to: maxDate,
+    from: subDays(latestDate, 7),
+    to: latestDate,
   });
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodValue>("previous-period");
   const [selectedCategories, setSelectedCategories] = useState(
     categories.map((category: { title: string }) => category.title)
   );
-  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData>({});
   const [deviceData, setDeviceData] = useState<KpiEntry[]>(defaultDeviceData);
   const [healthData, setHealthData] = useState<KpiEntry[]>(defaultHealthData);
   const [FertilityStatus, setFertilityData] = useState<KpiEntry[]>(defaultFertilityStatus);
