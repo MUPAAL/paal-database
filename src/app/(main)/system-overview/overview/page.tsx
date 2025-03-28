@@ -20,7 +20,7 @@ import {
 } from "@/components/Table"
 import api from "@/lib/axios"
 import { cx } from "@/lib/utils"
-import { Download } from "lucide-react"
+import { Plus } from "lucide-react"
 import { Fragment, useEffect, useState } from "react"
 import { FarmerManagementDrawer } from "./FarmerManagementDrawer"
 
@@ -184,11 +184,11 @@ export default function Overview() {
                         className="w-full gap-2 py-1.5 text-base sm:w-fit sm:text-sm"
                         onClick={() => setIsOpen(true)}
                     >
-                        <Download
+                        <Plus
                             className="-ml-0.5 size-4 shrink-0 text-gray-400 dark:text-gray-600"
                             aria-hidden="true"
                         />
-                        Export
+                        Add Farm
                     </Button>
                 </div>
             </div>

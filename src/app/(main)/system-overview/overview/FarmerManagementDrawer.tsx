@@ -18,6 +18,12 @@ import React, { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/Dialog"
 import { RiAddLine, RiDeleteBin4Fill } from '@remixicon/react'
 import { ArrowUpWideNarrow, GitBranch, MapPinHouse } from "lucide-react"
+import { toast } from "react-hot-toast"; // optional for better feedback UX
+
+
+var farmCount = 0;
+var barnCount = 0;
+var stallCount = 0;
 
 // -------------------------
 // Types for API data
@@ -135,6 +141,7 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
             return;
         }
         try {
+            farmCount++;
             console.log(newFarmName);
             await api.post('/farms', {
                 name: newFarmName,
@@ -151,6 +158,7 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
     const handleAddBarn = async () => {
         if (!newBarnName || !formData.farm) return;
         try {
+            barnCount++;
             await api.post('/barns', {
                 name: newBarnName,
                 farmId: formData.farm
@@ -166,6 +174,7 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
     const handleAddStall = async () => {
         if (!newStallName || !formData.barn || !formData.farm) return;
         try {
+            stallCount++;
             await api.post('/stalls', {
                 name: newStallName,
                 barnId: formData.barn,
@@ -178,6 +187,33 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
             console.error("Error adding stall:", error);
         }
     };
+
+    // utility function
+    const deleteEntity = async (type: 'farms' | 'barns' | 'stalls', id: string, cascade = false) => {
+        try {
+            let url = `/${type}/${id}`;
+            if (type !== 'stalls' && cascade) {
+                url += '?cascade=true';
+            }
+            await api.delete(url);
+            toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully`);
+
+            if (type == 'stalls') {
+                stallCount--;
+            }
+            if (type == 'barns') {
+                barnCount--;
+            }
+            if (type == 'farms') {
+                farmCount--;
+            }
+        } catch (error) {
+            console.error(`Error deleting ${type}:`, error);
+            toast.error(`Failed to delete ${type}`);
+        }
+    };
+
+    // in FirstPa
 
     return (
         <>
@@ -210,7 +246,15 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
                                         <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">
                                             {farm.barns?.length || 0} Barns
                                         </span>
-                                        <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
+                                        <Button
+                                            variant="ghost"
+                                            className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300"
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await deleteEntity('farms', farm._id);
+                                                refreshData();
+                                            }}
+                                        >
                                             <RiDeleteBin4Fill className="size-5 shrink-0" />
                                             <span className="sr-only">Remove {farm.name}</span>
                                         </Button>
@@ -265,7 +309,15 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
                                                 <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">
                                                     {stalls.filter(s => s.barnId._id === barn._id).length} Stalls
                                                 </span>
-                                                <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
+                                                <Button
+                                                    variant="ghost"
+                                                    className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300"
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        await deleteEntity('barns', barn._id);
+                                                        refreshData();
+                                                    }}
+                                                >
                                                     <RiDeleteBin4Fill className="size-5 shrink-0" />
                                                     <span className="sr-only">Remove {barn.name}</span>
                                                 </Button>
@@ -318,7 +370,15 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
                                                     <span className="truncate text-gray-700 dark:text-gray-300">{stall.name}</span>
                                                 </div>
                                                 <div className="flex items-center space-x-2">
-                                                    <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
+                                                    <Button
+                                                        variant="ghost"
+                                                        className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300"
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            await deleteEntity('stalls', stall._id);
+                                                            refreshData();
+                                                        }}
+                                                    >
                                                         <RiDeleteBin4Fill className="size-5 shrink-0" />
                                                         <span className="sr-only">Remove {stall.name}</span>
                                                     </Button>
@@ -341,7 +401,15 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
                                                 <span className="truncate text-gray-700 dark:text-gray-300">{stalls[stalls.length - 1].name}</span>
                                             </div>
                                             <div className="flex items-center space-x-2">
-                                                <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
+                                                <Button
+                                                    variant="ghost"
+                                                    className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300"
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        await deleteEntity('stalls', stalls[stalls.length - 1]._id);
+                                                        refreshData();
+                                                    }}
+                                                >
                                                     <RiDeleteBin4Fill className="size-5 shrink-0" />
                                                     <span className="sr-only">Remove {stalls[stalls.length - 1].name}</span>
                                                 </Button>
@@ -361,7 +429,15 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
                                                 <span className="truncate text-gray-700 dark:text-gray-300">{stall.name}</span>
                                             </div>
                                             <div className="flex items-center space-x-2">
-                                                <Button variant="ghost" className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300">
+                                                <Button
+                                                    variant="ghost"
+                                                    className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300"
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation();
+                                                        await deleteEntity('stalls', stall._id);
+                                                        refreshData();
+                                                    }}
+                                                >
                                                     <RiDeleteBin4Fill className="size-5 shrink-0" />
                                                     <span className="sr-only">Remove {stall.name}</span>
                                                 </Button>
@@ -397,69 +473,6 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
     );
 }
 
-
-// -------------------------
-// Second Page: Additional Pig Data Editing
-// Now includes fields for Pig ID, Tag, Breed and Age.
-interface SecondPageProps {
-    formData: PigFormData;
-    onUpdateForm: (updates: Partial<PigFormData>) => void;
-}
-
-const SecondPage = ({ formData, onUpdateForm }: SecondPageProps) => {
-    const handlePigIdChange = (value: string) => {
-        // Update both pigId and tag in the form state.
-        onUpdateForm({ pigId: value });
-        onUpdateForm({ tag: value ? `PIG-${value}` : "" });
-    };
-
-    return (
-        <>
-            <DrawerHeader>
-                <DrawerTitle>
-                    <p>Edit Pig Details</p>
-                    <span className="text-sm font-normal text-gray-500 dark:text-gray-500">
-                        Pig ID, Tag, Breed & Age
-                    </span>
-                </DrawerTitle>
-            </DrawerHeader>
-            <DrawerBody className="-mx-6 space-y-6 overflow-y-scroll border-t border-gray-200 px-6 dark:border-gray-800">
-                <FormField label="Tag">
-                    <Input
-                        disabled
-                        name="tagDisplay"
-                        value={formData.pigId ? `PIG-${formData.pigId}` : ""}
-                        placeholder="Enter pig id"
-                    />
-                    <input
-                        type="hidden"
-                        name="tag"
-                        value={formData.pigId ? `PIG-${formData.pigId}` : ""}
-                    />
-                </FormField>
-                <FormField label="Breed">
-                    <Input
-                        name="breed"
-                        value={formData.breed}
-                        onChange={(e) => onUpdateForm({ breed: e.target.value })}
-                        placeholder="Enter breed"
-                    />
-                </FormField>
-                <FormField label="Age (months)">
-                    <Input
-                        name="age"
-                        type="number"
-                        value={formData.age}
-                        onChange={(e) => onUpdateForm({ age: e.target.value })}
-                        placeholder="Enter age"
-                        min="0"
-                    />
-                </FormField>
-            </DrawerBody>
-        </>
-    );
-};
-
 // -------------------------
 // Summary Page: Review Pig Data
 
@@ -491,11 +504,25 @@ const SummaryPage = ({
     const selectedBarn = barns.find((barn) => barn._id === formData.barn)
     const selectedStall = formData.barn ? stalls.find((stall) => stall._id === formData.stall) : undefined
 
+    interface FormatCountParams {
+        currentLength: number;
+        countFromStats: number;
+    }
+
+    const formatCountWithDelta = (currentLength: number, countFromStats: number): string => {
+        const delta: number = countFromStats;
+        if (countFromStats === 0) {
+            return `${currentLength}`;
+        }
+        const sign: string = delta > 0 ? '+' : '';
+        return  `${currentLength}    (${sign}${countFromStats})` ;
+    };
+
     return (
         <>
             <DrawerHeader>
                 <DrawerTitle>
-                    <p>Review Pig Data</p>
+                    <p>Review Farm Data</p>
                     <span className="text-sm font-normal text-gray-500 dark:text-gray-500">
                         Please review all details before submitting
                     </span>
@@ -503,15 +530,11 @@ const SummaryPage = ({
             </DrawerHeader>
             <DrawerBody className="-mx-6 space-y-4 overflow-y-scroll border-t border-gray-200 px-6 dark:border-gray-800">
                 <div className="rounded-md border border-gray-200 dark:border-gray-800 p-4">
-                    <h3 className="font-medium">Pig Information</h3>
+                    <h3 className="font-medium">Barn Information</h3>
                     <div className="mt-4 space-y-4">
-                        <SummaryItem label="Pig ID" value={formData.pigId} />
-                        <SummaryItem label="Tag" value={formData.tag} />
-                        <SummaryItem label="Farm" value={selectedFarm?.name} />
-                        <SummaryItem label="Barn" value={selectedBarn?.name} />
-                        <SummaryItem label="Stall" value={selectedStall?.name} />
-                        <SummaryItem label="Breed" value={formData.breed} />
-                        <SummaryItem label="Age" value={formData.age} />
+                        <SummaryItem label="Number of Farms" value={formatCountWithDelta(farms.length, farmCount)} />
+                        <SummaryItem label={`Number of Barns for Farm:  ${selectedFarm?.name}`} value={formatCountWithDelta(barns.length, barnCount)} />
+                        <SummaryItem label={`Number of Barns for Barn:  ${selectedBarn?.name}`} value={formatCountWithDelta(stalls.length, stallCount)} />
                     </div>
                 </div>
             </DrawerBody>
@@ -650,7 +673,7 @@ export function FarmerManagementDrawer({ open, onOpenChange }: PigDrawerProps) {
                     />
                 )
             case 2:
-                return <SecondPage formData={formData} onUpdateForm={handleUpdateForm} />
+                ;;
             case 3:
                 return <SummaryPage formData={formData} farms={farms} barns={barns} stalls={stalls} />
             default:
@@ -666,10 +689,10 @@ export function FarmerManagementDrawer({ open, onOpenChange }: PigDrawerProps) {
                         <Button variant="secondary">Cancel</Button>
                     </DrawerClose>
                     <Button
-                        onClick={() => setCurrentPage(2)}
-                        disabled={!formData.farm || !formData.barn || !formData.stall}
+                        onClick={() => setCurrentPage(3)}
+                        disabled={!formData.farm || !formData.barn}
                     >
-                        Continue
+                        Review
                     </Button>
                 </>
             )
@@ -686,7 +709,7 @@ export function FarmerManagementDrawer({ open, onOpenChange }: PigDrawerProps) {
         }
         return (
             <>
-                <Button variant="secondary" onClick={() => setCurrentPage(2)}>
+                <Button variant="secondary" onClick={() => setCurrentPage(1)}>
                     Back
                 </Button>
                 <Button onClick={handleSubmit} disabled={isSubmitting}>

@@ -215,23 +215,31 @@ const emitUpdatedStats = async () => {
     // Transform pigs for UI
     const transformedPigs = pigs.map(pig => ({
       owner: `PIG-${pig.pigId.toString().padStart(3, '0')}`,
-      status: pig.bcsScore >= 4 ? "critical" : pig.bcsScore >= 3 ? "healthy" : "suspicious",
+      status: pig.status || 'healthy', // Default to healthy if no status
       costs: pig.age,
-      region: pig.currentLocation.stallId,
-      stability: pig.stability,
-      lastEdited: pig.lastUpdate
-        ? new Date(pig.lastUpdate).toLocaleDateString('en-GB', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
+      region: pig.currentLocation.stallId?.name 
+        ? `Stall ${pig.currentLocation.stallId.name}` 
+        : 'Unknown Location',
+    stability: pig.stability, 
+      lastEdited: pig.updatedAt
+        ? new Date(pig.updatedAt).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
           })
         : new Date().toLocaleDateString('en-GB', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit'
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
           }),
       breed: pig.breed,
-      healthStatus: pigHealthAggregated.find(status => status._id === pig._id.toString())?.status,
-      heatStatus: pigHeatStatusAggregated.find(status => status._id === pig._id.toString())?.status
-    }));
+      active: pig.active
+    }))
+
 
     // Transform devices for UI
     const transformedDevices = devices.map(device => ({

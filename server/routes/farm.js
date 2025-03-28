@@ -287,7 +287,7 @@ router.delete('/:id', async (req, res) => {
       // Find all related data
       const [barns, stalls] = await Promise.all([
         Barn.find({ farmId: farm._id }),
-        Stall.find({ farmId: farm._id })
+        Stall.find({ farmId: Barn._id })
       ]);
       
       const barnIds = barns.map(b => b._id);
@@ -297,7 +297,7 @@ router.delete('/:id', async (req, res) => {
       await Promise.all([
         Barn.deleteMany({ _id: { $in: barnIds } }),
         Stall.deleteMany({ _id: { $in: stallIds } }),
-        Device.deleteMany({ farmId: farm._id }),
+        // Device.deleteMany({ farmId: farm._id }),
         Pig.updateMany(
           { 'currentLocation.farmId': farm._id },
           { $set: { active: false } }
