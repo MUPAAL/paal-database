@@ -159,13 +159,13 @@ export function BarnStallCard({
                                 content={<CustomTooltipContent />}
                             />
                             <PolarGrid
-                                className="fill-[--color-value] opacity-20"
+                                className="fill-purple-500 opacity-20"
                                 gridType="circle"
                             />
                             <PolarAngleAxis dataKey="category" />
                             <Radar
                                 dataKey="value"
-                                fill="var(--color-value)"
+                                fill="#4f46e5"
                                 fillOpacity={0.5}
                                 isAnimationActive={false}
                             />

@@ -1,5 +1,6 @@
 import { PeriodValue } from "@/app/(main)/overview/page";
 import { BarChartVariant } from "@/components/BarChartVariant";
+import { AvailableChartColorsKeys } from "@/lib/chartUtils";
 import { cx } from "@/lib/utils";
 import React from "react";
 import { DateRange } from "react-day-picker";
@@ -28,7 +29,7 @@ export type CardProps = {
   selectedPeriod: PeriodValue;
   data: ChartDataPoint[]; // Time-series data passed from parent
   categories?: string[]; // Dynamic categories for the chart
-  colors?: string[]; // Dynamic colors for the chart
+  colors?: AvailableChartColorsKeys[]; // Dynamic colors for the chart
 };
 
 const formattingMap = {
@@ -43,7 +44,7 @@ export const ChartCard = React.memo(function ChartCard({
   selectedPeriod,
   data, // Time-series data passed from parent
   categories = ["totalPigs", "totalPigsInHeat", "totalPigsReadyToBreed"], // Default categories
-  colors = ["blue", "green", "orange"], // Default colors
+  colors = ["blue", "emerald", "violet", "amber", "gray"], // Default colors
 }: CardProps) {
   const formatter = formattingMap[type];
 
@@ -88,7 +89,7 @@ export const ChartCard = React.memo(function ChartCard({
         data={filteredData}
         index="date"
         categories={categories} // Dynamic categories
-        colors={colors} // Dynamic colors
+        colors={["blue", "violet", "gray", "violet", "blue", "gray" ]} // Dynamic colors
         valueFormatter={formatter}
         xValueFormatter={(value) => value}
         showXAxis={true}

@@ -1,12 +1,5 @@
 "use client"
 
-import {
-  Select,
-  SelectContent,
-  SelectItemPeriod,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/Select"
 
 import { Label } from "@/components/Label"
 
@@ -133,31 +126,7 @@ export function Filterbar({
           fromDate={minDate}
           align="start"
         />
-        <span className="hidden text-sm font-medium text-gray-500 sm:block">
-          compared to
-        </span>
-        <Select
-          defaultValue="no-comparison"
-          value={selectedPeriod}
-          onValueChange={(value) => {
-            onPeriodChange(value as PeriodValue)
-          }}
-        >
-          <SelectTrigger className="mt-2 w-full sm:mt-0 sm:w-fit">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {periods.map((period) => (
-              <SelectItemPeriod
-                key={period.value}
-                value={period.value}
-                period={getPeriod(selectedDates, period.value)}
-              >
-                {period.label}
-              </SelectItemPeriod>
-            ))}
-          </SelectContent>
-        </Select>
+
       </div>
       <Dialog>
         <DialogTrigger asChild>

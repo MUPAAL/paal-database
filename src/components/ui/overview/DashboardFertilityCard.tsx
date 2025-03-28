@@ -1,6 +1,5 @@
 import { cx } from "@/lib/utils";
 
-import { Badge } from "@/components/Badge";
 
 import { Card } from "@/components/Card";
 import { ProgressCircle } from "@/components/ProgressCircle_S";
@@ -74,7 +73,6 @@ export default function FertilityProgressCard({
           <dt className="font-bold text-gray-900 sm:text-sm dark:text-gray-50">
             {title}
           </dt>
-          <Badge variant="neutral">{change}</Badge>
         </div>
 
         <dd className="mt-2 flex items-baseline gap-2">

@@ -76,7 +76,6 @@ export default function HeatProgressCard({
                     <dt className="font-bold text-gray-900 sm:text-sm dark:text-gray-50">
                         {title}
                     </dt>
-                    <Badge variant="neutral">{change}</Badge>
                 </div>
 
                 <dd className="mt-2 flex items-baseline gap-2">

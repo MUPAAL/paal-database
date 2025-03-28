@@ -1,7 +1,7 @@
 import { Badge } from "@/components/Badge"
 import { ProgressBar } from "@/components/ProgressBar"
 
-import { KpiEntry } from "@/app/(main)/overview/page"
+import { KpiEntry } from "@/app/(main)/overview/components/constants"
 
 export type CardProps = {
   title: string
@@ -36,7 +36,7 @@ export function ProgressBarCard({
           </div>
           <dd className="mt-2 flex items-baseline gap-2">
             <span className="text-xl text-gray-900 dark:text-gray-50">
-              {value}
+              {parseInt(value)}
             </span>
             <span className="text-sm text-gray-500">{valueDescription}</span>
           </dd>
