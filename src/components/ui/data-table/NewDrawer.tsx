@@ -44,8 +44,13 @@ type Barn = {
 type Stall = {
   _id: string
   name: string
-  barnId: string
+  barnId: {
+    _id: string
+    name: string
+  }
   farmId: string
+  createdAt: string
+  updatedAt: string
 }
 
 // -------------------------
@@ -95,7 +100,7 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls }: FirstPagePr
   )
   // Filter stalls based on the selected barn.
   const availableStalls = formData.barn
-    ? stalls.filter((stall) => stall.barnId === formData.barn)
+    ? stalls.filter((stall) => stall.barnId._id === formData.barn)
     : []
   // Get the selected barn (to display its name in stall descriptions).
   const selectedBarn = availableBarns.find((barn) => barn._id === formData.barn)
@@ -361,15 +366,22 @@ export function PigDrawer({ open, onOpenChange }: PigDrawerProps) {
   }, [formData.farm]);
 
   // Fetch all stalls
+  // Fetch all stalls
   useEffect(() => {
-    api.get('/stalls')
-      .then((res) => setStalls(res.data))
-      .catch(console.error);
-  }, []);
+    if (formData.barn) {
+      api.get(`/stalls/barn/${formData.barn}`)
+        .then((res) => setStalls(res.data))
+        .catch(console.error);
+    } else {
+      setStalls([]);
+    }
+  }, [formData.barn]);
 
   const handleUpdateForm = (updates: Partial<PigFormData>) => {
     setFormData((prev) => ({ ...prev, ...updates }))
   }
+
+  console.log(formData.barn);
 
   const handleSubmit = async () => {
     setIsSubmitting(true)

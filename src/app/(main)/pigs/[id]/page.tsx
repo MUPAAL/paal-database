@@ -212,10 +212,10 @@ export default function PigDashboard() {
             </Tabs>
           </div>
 
-          {/* <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
             <TransactionChart yAxisWidth={100} type="category" />
             <TransactionChart yAxisWidth={100} type="merchant" />
-          </div> */}
+          </div>
         </div>
       </section>
     </div>

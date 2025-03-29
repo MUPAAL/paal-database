@@ -9,6 +9,7 @@ const PigHeatStatus = require('../models/PigHeatStatus')
 const rateLimit = require('express-rate-limit')
 
 const mongoose = require('mongoose'); // Add this line at the top
+const PigPosture = require('../models/PostureData')
 
 // Define rate limiter: maximum of 100 requests per 15 minutes
 const limiter = rateLimit({
@@ -183,11 +184,10 @@ router.get('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Invalid pig id' })
     }
     
-    const pig = await Pig.findOne({ pigId: id })
-      .populate('currentLocation.farmId')
-      .populate('currentLocation.barnId')
-      .populate('currentLocation.stallId')
-      .populate('healthStatus')
+     const pig = await Pig.findOne({ pigId: id })
+    //   .populate('currentLocation.farmId')
+    //   .populate('currentLocation.barnId')
+    //   .populate('currentLocation.stallId')
     
     if (!pig) {
       return res.status(404).json({ error: 'Pig not found' })
@@ -208,28 +208,62 @@ router.get('/:id/bcs', async (req, res) => {
       return res.status(400).json({ error: 'Invalid pig id' })
     }
 
-    // Find the pig to get its ObjectId
-    const pig = await Pig.findOne({ pigId: id })
-    if (!pig) {
-      return res.status(404).json({ error: 'Pig not found' })
-    }
+    // // Find the pig to get its ObjectId
+    // const pig = await Pig.findOne({ pigId: id })
+    // if (!pig) {
+    //   return res.status(404).json({ error: 'Pig not found' })
+    // }
 
-    const bcsData = await PigBCS.find({ pigId: pig._id })
+    const bcsData = await PigBCS.find({ pigId: id})
       .sort({ timestamp: -1 })
       .limit(100)
 
-    // Transform the data to include the original pigId
-    const result = bcsData.map(data => ({
-      ...data.toObject(),
-      pigId: pig.pigId
-    }))
+    // // Transform the data to include the original pigId
+    // const result = bcsData.map(data => ({
+    //   ...data.toObject(),
+    //   pigId: pig.pigId
+    // }))
 
-    res.json(result)
+    res.json(bcsData)
   } catch (error) {
     console.error('Error fetching BCS data:', error)
     res.status(500).json({ error: 'Failed to fetch BCS data' })
   }
 })
+
+
+// Get pig BCS history
+router.get('/:id/posture', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid pig id' })
+    }
+
+    // // Find the pig to get its ObjectId
+    // const pig = await Pig.findOne({ pigId: id })
+    // if (!pig) {
+    //   return res.status(404).json({ error: 'Pig not found' })
+    // }
+
+    const PostureData = await PigPosture.find({ pigId: id})
+      .sort({ timestamp: -1 })
+      .limit(100)
+
+    // // Transform the data to include the original pigId
+    // const result = bcsData.map(data => ({
+    //   ...data.toObject(),
+    //   pigId: pig.pigId
+    // }))
+
+    res.json(PostureData)
+  } catch (error) {
+    console.error('Error fetching Posture data:', error)
+    res.status(500).json({ error: 'Failed to fetch BCS data' })
+  }
+})
+
+
 function calculateDateRange(range) {
   const now = new Date();
   let startDate = new Date();

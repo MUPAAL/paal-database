@@ -3,6 +3,7 @@
 import { Button } from "@/components/Button";
 import {
   Drawer,
+  DrawerBody,
   DrawerClose,
   DrawerContent,
   DrawerFooter,
@@ -59,9 +60,17 @@ export type PigFormData = {
   breed: string;
   age: string;
   currentLocation: {
-    farmId: string;
-    barnId: string;
-    stallId: string;
+    farmId: string
+
+    barnId: {
+      _id: string;
+      name: string;
+
+    }
+    stallId: {
+      _id: string;
+      name: string;
+    }
   };
 };
 
@@ -143,35 +152,16 @@ const DetailsForm = ({
   stalls,
 }: DetailsFormProps) => {
   // Find the currently selected farm / barn objects:
+  console.log(formData.currentLocation.farmId)
   const currentFarm = formData.currentLocation.farmId;
-  const currentBarn = formData.currentLocation.barnId;
+  const currentBarn = formData.currentLocation.barnId._id;
 
   // Only show stalls for the chosen barn
-  const currentStall = formData.currentLocation.stallId;
+  const currentStall = formData.currentLocation.stallId._id;
 
   return (
     <div className="space-y-6">
-      <FormField label="Farm">
-        <Input
-          value={currentFarm || ""}
-          disabled
-          placeholder="Farm not set"
-        />
-      </FormField>
-      <FormField label="Barn">
-        <Input
-          value={currentBarn || ""}
-          disabled
-          placeholder="Barn not set"
-        />
-      </FormField>
-      <FormField label="Stall">
-        <Input
-          value={currentStall || ""}
-          disabled
-          placeholder="Farm not set"
-        />
-      </FormField>
+    
       <FormField label="">
         <PigIdInput
           value={formData.pigId}
@@ -214,6 +204,71 @@ const DetailsForm = ({
           min="0"
         />
       </FormField>
+    </div>
+  );
+};
+
+
+/// farms 
+/// 
+
+
+
+// -------------------------
+// Details Form
+// -------------------------
+interface farmsFormProps {
+  formData: PigFormData;
+  onUpdateForm: (updates: Partial<PigFormData>) => void;
+  farms: Farm[];
+  barns: Barn[];
+  stalls: Stall[];
+}
+
+interface FeedFormProps {
+  pigId: string; // Add pigId as a prop
+}
+
+
+const FarmsForm = ({
+  formData,
+  onUpdateForm,
+  farms,
+  barns,
+  stalls,
+}: farmsFormProps) => {
+  // Find the currently selected farm / barn objects:
+  console.log(formData.currentLocation.farmId)
+  const currentFarm = formData.currentLocation.farmId;
+  const currentBarn = formData.currentLocation.barnId._id;
+
+  // Only show stalls for the chosen barn
+  const currentStall = formData.currentLocation.stallId._id;
+
+  return (
+    <div className="space-y-6">
+      <FormField label="Farm">
+        <Input
+          value={currentFarm || ""}
+          disabled
+          placeholder="Farm not set"
+        />
+      </FormField>
+      <FormField label="Barn">
+        <Input
+          value={currentBarn || ""}
+          disabled
+          placeholder="Barn not set"
+        />
+      </FormField>
+      <FormField label="Stall">
+        <Input
+          value={currentStall || ""}
+          disabled
+          placeholder="Farm not set"
+        />
+      </FormField>
+      
     </div>
   );
 };
@@ -475,7 +530,7 @@ export function PigEditDrawer({
   // 6) On mount, fetch master stalls
   useEffect(() => {
     api
-      .get("/stalls")
+      .get(`/stalls/barn/${formData.barn}`)
       .then((res) => setStalls(res.data))
       .catch((err) => console.error("Error fetching stalls:", err));
   }, []);
@@ -513,8 +568,8 @@ export function PigEditDrawer({
         age: Number(formData.age),
         currentLocation: {
           farmId: formData.currentLocation.farmId,
-          barnId: formData.currentLocation.barnId,
-          stallId: formData.currentLocation.stallId,
+          barnId: formData.currentLocation.barnId._id,
+          stallId: formData.currentLocation.stallId._id,
         },
       };
       // Example: PUT /api/pigs/85 with data
@@ -535,37 +590,56 @@ export function PigEditDrawer({
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="overflow-x-hidden sm:max-w-lg">
-        <DrawerHeader className="-px-6 w-full">
-          <DrawerTitle className="flex w-full items-center justify-between">
+        <DrawerHeader>
+          <DrawerTitle>
             {/* The tag is the entire "PIG-xxx" */}
-            <span>{formData.tag || "No Tag"}</span>
+            <p>Edit Pig Data</p>
+            <span className="text-sm font-normal text-gray-500 dark:text-gray-500" >
+              Edit Pig Data for Pig {formData.pigId || "No Tag"}
+            </span>
           </DrawerTitle>
         </DrawerHeader>
+        {/* Farms: rendered as a radio group */}
+        <DrawerBody className="-mx-6 space-y-6 overflow-y-scroll border-t border-gray-200 px-6 dark:border-gray-800">
 
-        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val)}>
-          <TabsList className="px-6">
-            <TabsTrigger value="details" className="px-4">
-              Details
-            </TabsTrigger>
-            <TabsTrigger value="feed" className="px-4">
-              Feed
-            </TabsTrigger>
-          </TabsList>
+          <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val)}>
+            <TabsList className="px-6">
+              <TabsTrigger value="farms" className="px-4">
+                Farm
+              </TabsTrigger>
+              <TabsTrigger value="details" className="px-4">
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="feed" className="px-4">
+                Feed
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="details" className="px-6 py-4">
-            <DetailsForm
-              formData={formData}
-              onUpdateForm={handleUpdateForm}
-              farms={farms}
-              barns={barns}
-              stalls={stalls}
-            />
-          </TabsContent>
+            <TabsContent value="farms" className="px-6 py-4">
+              <FarmsForm
+                formData={formData}
+                onUpdateForm={handleUpdateForm}
+                farms={farms}
+                barns={barns}
+                stalls={stalls}
+              />
+            </TabsContent>
 
-          <TabsContent value="feed" className="px-6 py-4">
-            <FeedForm pigId={formData.pigId} /> {/* Pass pigId as a prop */}
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="details" className="px-6 py-4">
+              <DetailsForm
+                formData={formData}
+                onUpdateForm={handleUpdateForm}
+                farms={farms}
+                barns={barns}
+                stalls={stalls}
+              />
+            </TabsContent>
+
+            <TabsContent value="feed" className="px-6 py-4">
+              <FeedForm pigId={formData.pigId} /> {/* Pass pigId as a prop */}
+            </TabsContent>
+          </Tabs>
+        </DrawerBody>
 
         <DrawerFooter className="-mx-6 -mb-2 gap-2 px-6">
           <DrawerClose asChild>

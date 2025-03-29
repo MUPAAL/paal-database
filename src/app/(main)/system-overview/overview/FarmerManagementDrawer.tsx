@@ -515,7 +515,7 @@ const SummaryPage = ({
             return `${currentLength}`;
         }
         const sign: string = delta > 0 ? '+' : '';
-        return  `${currentLength}    (${sign}${countFromStats})` ;
+        return `${currentLength}    (${sign}${countFromStats})`;
     };
 
     return (

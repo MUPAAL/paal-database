@@ -132,7 +132,12 @@ const emitUpdatedStats = async () => {
     }));
 
     // Get all pigs
-    const pigs = await Pig.find({}).sort({ lastUpdate: -1 });
+    const pigs = await Pig.find({})
+      .populate('currentLocation.farmId')
+      .populate('currentLocation.barnId')
+      .populate('currentLocation.stallId')
+      .populate('healthStatus')
+      .sort({ lastUpdate: -1 });
 
     // Pig Health Status aggregation
     const pigHealthAggregated = await PigHealthStatus.aggregate([
@@ -215,12 +220,12 @@ const emitUpdatedStats = async () => {
     // Transform pigs for UI
     const transformedPigs = pigs.map(pig => ({
       owner: `PIG-${pig.pigId.toString().padStart(3, '0')}`,
-      status: pig.status || 'healthy', // Default to healthy if no status
+      status:  pig.healthStatus?.status || 'healthy', // Default to healthy if no status
       costs: pig.age,
       region: pig.currentLocation.stallId?.name 
-        ? `Stall ${pig.currentLocation.stallId.name}` 
+        ? `${pig.currentLocation.farmId?.name | "N/A" } => ${pig.currentLocation.barnId?.name | "n/A"} => ${pig.currentLocation.stallId.name}` 
         : 'Unknown Location',
-    stability: pig.stability, 
+     stability: pig.stability, 
       lastEdited: pig.updatedAt
         ? new Date(pig.updatedAt).toLocaleDateString('en-GB', {
             day: '2-digit',
