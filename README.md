@@ -48,18 +48,18 @@ Getting Started
 
 This command creates a new branch named `localDev` and switches you to it. Remember to replace `<user_name>` with your own git username. All changes you make now will be isolated from the main branch.
 
-### 3\. CInstall Local Dependancies with NPM 
+### 3\. Install Local Dependancies with PNPM 
 
     npm install
+    pnpm install 
+
 
 this command allows you to install the local depos for the web application. This is crucial in actually running the application and not running into compile time errors with docker 
+
 
 ### 4\. Set Up Environment Variables
 
 Create a `.env` file in the root directory with the following content (adjust as needed):
-
-# API URL FOR NEXT APP
-NEXT_PUBLIC_BASE_URL=http://localhost:8080
 
     # MongoDB Initialization Variables
     MONGO_INITDB_ROOT_USERNAME=PAAL 
@@ -76,53 +76,16 @@ NEXT_PUBLIC_BASE_URL=http://localhost:8080
     SERVER_PORT=5005
     PORT=3000
     
-    # Clerk URLs
-    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/overview
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/overview
-    
     # API URL for React App
     REACT_APP_API_URL=http://localhost:8080
     NEXT_PUBLIC_API_URL=http://localhost:8080
+    NEXT_PUBLIC_BASE_URL=http://localhost:8080
 
 
 Docker Compose automatically loads a file named `.env` from the root directory when you run `docker compose up`.
 
-### 4\. Docker Compose Setup for MongoDB with Replica Set
 
-Our Docker Compose file sets up MongoDB with a replica set (`rs0`) and internal authentication using a key file.
-
-*   **Replica Set:** Even a single node runs as a replica set for future scalability.
-*   **Key File:** The key file is mounted from `./database/sslkey/security.keyFile` into the container at `/etc/secrets/security.keyFile`.
-*   **Authentication:** The `--auth` flag is enabled, and the admin user is automatically created from environment variables.
-
-Snippet from `docker-compose.yml`:
-
-    version: "3.8"
-    services:
-      mongo:
-        image: mongo:latest
-        container_name: ${DATABASE_HOST}
-        restart: always
-        env_file: .env
-        environment:
-          MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-          MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-          MONGO_INITDB_DATABASE: ${DATABASE_COLLECTION}
-        ports:
-          - ${DATABASE_PORT}:27017
-        networks:
-          - app-net
-        volumes:
-          - database-v:/data/db
-          - ./database/sslkey/security.keyFile:/etc/secrets/security.keyFile:rw
-        command: [ "mongod", "--replSet", "rs0", "--auth", "--keyFile", "/etc/secrets/security.keyFile" ]
-    
-
-After starting the container, connect to MongoDB and run the replica set initiation command (see RUNNING THE APPLICATION SECTION).
-
-### 5.1 \. Creating the Authentication SSL Key for `security.keyFile`
+### 4.1 \. Creating the Authentication SSL Key for `security.keyFile`
 
 To enable **internal authentication** for MongoDB using a **key file**, follow these steps:
 
@@ -134,7 +97,7 @@ Ensure that the directory structure exists on your host machine:
 
 This will create the `sslkey` directory inside `database/`.
 
-#### Step 2: Generate the Key File
+### Step 2: Generate the Key File
 
 Run the following command to create a **random key** and save it to `security.keyFile`:
 
@@ -142,7 +105,7 @@ Run the following command to create a **random key** and save it to `security.ke
 
 This generates a **756-byte** base64-encoded key (recommended by MongoDB) and saves it to `security.keyFile`.
 
-#### Step 3: Set Proper Permissions
+### Step 3: Set Proper Permissions
 
 
 MongoDB requires that the key file is **only readable** by the owner (`600` permissions):
@@ -151,7 +114,7 @@ MongoDB requires that the key file is **only readable** by the owner (`600` perm
 
 This ensures that only the owner can read and write the key file.
 
-##### Step 4: Verify the Key File
+### Step 4: Verify the Key File
 
 You can check the contents of the key file to confirm it was generated correctly:
 
@@ -160,33 +123,7 @@ You can check the contents of the key file to confirm it was generated correctly
 You should see a long base64-encoded string.
 
 
-### 5\. Frontend and Backend Services
-
-The backend service runs the Node.js/Express server, the frontend service runs Next.js, and the Mongo service hosts the database. Each container operates in an isolated network environment. If you were to check your router, each Docker container would register as its own device. These containers communicate through a Docker network bridge, which provides a secure link between them. This setup is particularly useful in production, as it helps restrict communication gateways, reducing exposure to external threats and minimizing potential internal bugs.
-
-Now, let's examine what makes our Docker environment function. Everything is defined as services within our docker-compose.yml file. Each service is started based on its Dockerfile, which provides specific instructions for launching the server. And each service is operated with our 'DockerFile' identifier for specific instructions to start our server. There are two sets of DockerFiles in the main directory of the project. one is for production and has the suffix `.production`, and the other is for development with the suffix `.development`. For now, we will focus on the development build, which uses the Next.js development command that enables live reloading!!
-
-**Example Docker Compose entry for Frontend (development override):**
-
-    services:
-      frontend:
-        build:
-          context: .
-          dockerfile: Dockerfile.frontend
-        container_name: frontend
-        environment:
-          - NODE_ENV=development
-        ports:
-          - "3000:3000"
-        volumes:
-          - ./:/usr/src/app
-          - /usr/src/app/node_modules
-        command: ["npm", "run", "dev"]
-
-You can use a separate override file (e.g., `docker-compose.override.yml`) to differentiate between production and development setups.
-
-Setting Up Docker Replica Set Information
------------------------
+### 5\. Starting the Mongo Replicaset
 
 ### 1\. Start the Mongo Docker 
 
@@ -194,11 +131,15 @@ Setting Up Docker Replica Set Information
 
 ### 2\. Initiate the MongoDB Replica Set
 
-Once MongoDB is running, connect to it with authentication from the admin database (this is a seperate database from PAAL that sets the user Auth) :
+#### 2.1\.Once MongoDB is running, connect to it with authentication from the admin database (this is a seperate database from PAAL that sets the user Auth) :
 
     mongosh "mongodb://PAAL:PAAL@127.0.0.1:27017/admin?authSource=admin"
 
-Then, initiate the replica set:
+or if mongosh isn't installed on machine. Load through docker container using command: 
+
+    docker exec -it mongo-c mongosh -u PAAL -p PAAL --authenticationDatabase admin
+
+#### 2.2\.Then, initiate the replica set:
 
     rs.initiate({
       _id: "rs0",
@@ -207,7 +148,7 @@ Then, initiate the replica set:
       ]
     })
 
-Verify the configuration:
+#### 2.3\. (OPTIONAL) Verify the configuration:
 
     rs.status()
 
@@ -304,6 +245,68 @@ Project Structure
     ├── Dockerfile.frontend       # Dockerfile for frontend build
     ├── backup_to_github.sh       # Database backup automation script
     └── README.md                 # This file
+
+Snippet into Docker Compose 
+---------------------------
+
+### 4\. Docker Compose Setup for MongoDB with Replica Set
+
+Our Docker Compose file sets up MongoDB with a replica set (`rs0`) and internal authentication using a key file.
+
+*   **Replica Set:** Even a single node runs as a replica set for future scalability.
+*   **Key File:** The key file is mounted from `./database/sslkey/security.keyFile` into the container at `/etc/secrets/security.keyFile`.
+*   **Authentication:** The `--auth` flag is enabled, and the admin user is automatically created from environment variables.
+
+Snippet from `docker-compose.yml`:
+
+    version: "3.8"
+    services:
+      mongo:
+        image: mongo:latest
+        container_name: ${DATABASE_HOST}
+        restart: always
+        env_file: .env
+        environment:
+          MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+          MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+          MONGO_INITDB_DATABASE: ${DATABASE_COLLECTION}
+        ports:
+          - ${DATABASE_PORT}:27017
+        networks:
+          - app-net
+        volumes:
+          - database-v:/data/db
+          - ./database/sslkey/security.keyFile:/etc/secrets/security.keyFile:rw
+        command: [ "mongod", "--replSet", "rs0", "--auth", "--keyFile", "/etc/secrets/security.keyFile" ]
+    
+
+After starting the container, connect to MongoDB and run the replica set initiation command (see RUNNING THE APPLICATION SECTION).
+
+### 5\. Frontend and Backend Services
+
+The backend service runs the Node.js/Express server, the frontend service runs Next.js, and the Mongo service hosts the database. Each container operates in an isolated network environment. If you were to check your router, each Docker container would register as its own device. These containers communicate through a Docker network bridge, which provides a secure link between them. This setup is particularly useful in production, as it helps restrict communication gateways, reducing exposure to external threats and minimizing potential internal bugs.
+
+Now, let's examine what makes our Docker environment function. Everything is defined as services within our docker-compose.yml file. Each service is started based on its Dockerfile, which provides specific instructions for launching the server. And each service is operated with our 'DockerFile' identifier for specific instructions to start our server. There are two sets of DockerFiles in the main directory of the project. one is for production and has the suffix `.production`, and the other is for development with the suffix `.development`. For now, we will focus on the development build, which uses the Next.js development command that enables live reloading!!
+
+**Example Docker Compose entry for Frontend (development override):**
+
+    services:
+      frontend:
+        build:
+          context: .
+          dockerfile: Dockerfile.frontend
+        container_name: frontend
+        environment:
+          - NODE_ENV=development
+        ports:
+          - "3000:3000"
+        volumes:
+          - ./:/usr/src/app
+          - /usr/src/app/node_modules
+        command: ["npm", "run", "dev"]
+
+You can use a separate override file (e.g., `docker-compose.override.yml`) to differentiate between production and development setups.
+
 
 How It All Works
 ----------------
