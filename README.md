@@ -124,33 +124,7 @@ You can check the contents of the key file to confirm it was generated correctly
 You should see a long base64-encoded string.
 
 
-### 5\. Frontend and Backend Services
-
-The backend service runs the Node.js/Express server, the frontend service runs Next.js, and the Mongo service hosts the database. Each container operates in an isolated network environment. If you were to check your router, each Docker container would register as its own device. These containers communicate through a Docker network bridge, which provides a secure link between them. This setup is particularly useful in production, as it helps restrict communication gateways, reducing exposure to external threats and minimizing potential internal bugs.
-
-Now, let's examine what makes our Docker environment function. Everything is defined as services within our docker-compose.yml file. Each service is started based on its Dockerfile, which provides specific instructions for launching the server. And each service is operated with our 'DockerFile' identifier for specific instructions to start our server. There are two sets of DockerFiles in the main directory of the project. one is for production and has the suffix `.production`, and the other is for development with the suffix `.development`. For now, we will focus on the development build, which uses the Next.js development command that enables live reloading!!
-
-**Example Docker Compose entry for Frontend (development override):**
-
-    services:
-      frontend:
-        build:
-          context: .
-          dockerfile: Dockerfile.frontend
-        container_name: frontend
-        environment:
-          - NODE_ENV=development
-        ports:
-          - "3000:3000"
-        volumes:
-          - ./:/usr/src/app
-          - /usr/src/app/node_modules
-        command: ["npm", "run", "dev"]
-
-You can use a separate override file (e.g., `docker-compose.override.yml`) to differentiate between production and development setups.
-
-Setting Up Docker Replica Set Information
------------------------
+### 5\. Starting the Mongo Replicaset
 
 ### 1\. Start the Mongo Docker 
 
@@ -271,6 +245,7 @@ Project Structure
 
 Snippet into Docker Compose 
 ---------------------------
+
 ### 4\. Docker Compose Setup for MongoDB with Replica Set
 
 Our Docker Compose file sets up MongoDB with a replica set (`rs0`) and internal authentication using a key file.
@@ -303,6 +278,31 @@ Snippet from `docker-compose.yml`:
     
 
 After starting the container, connect to MongoDB and run the replica set initiation command (see RUNNING THE APPLICATION SECTION).
+
+### 5\. Frontend and Backend Services
+
+The backend service runs the Node.js/Express server, the frontend service runs Next.js, and the Mongo service hosts the database. Each container operates in an isolated network environment. If you were to check your router, each Docker container would register as its own device. These containers communicate through a Docker network bridge, which provides a secure link between them. This setup is particularly useful in production, as it helps restrict communication gateways, reducing exposure to external threats and minimizing potential internal bugs.
+
+Now, let's examine what makes our Docker environment function. Everything is defined as services within our docker-compose.yml file. Each service is started based on its Dockerfile, which provides specific instructions for launching the server. And each service is operated with our 'DockerFile' identifier for specific instructions to start our server. There are two sets of DockerFiles in the main directory of the project. one is for production and has the suffix `.production`, and the other is for development with the suffix `.development`. For now, we will focus on the development build, which uses the Next.js development command that enables live reloading!!
+
+**Example Docker Compose entry for Frontend (development override):**
+
+    services:
+      frontend:
+        build:
+          context: .
+          dockerfile: Dockerfile.frontend
+        container_name: frontend
+        environment:
+          - NODE_ENV=development
+        ports:
+          - "3000:3000"
+        volumes:
+          - ./:/usr/src/app
+          - /usr/src/app/node_modules
+        command: ["npm", "run", "dev"]
+
+You can use a separate override file (e.g., `docker-compose.override.yml`) to differentiate between production and development setups.
 
 
 How It All Works
