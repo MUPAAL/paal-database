@@ -76,12 +76,6 @@ NEXT_PUBLIC_BASE_URL=http://localhost:8080
     SERVER_PORT=5005
     PORT=3000
     
-    # Clerk URLs
-    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/overview
-    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/overview
-    
     # API URL for React App
     REACT_APP_API_URL=http://localhost:8080
     NEXT_PUBLIC_API_URL=http://localhost:8080
