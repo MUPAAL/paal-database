@@ -1,87 +1,187 @@
-// Overview.tsx
 "use client";
-import { Card } from "@/components/Card";
-import FertilityProgressCard from "@/components/ui/overview/DashboardFertilityCard";
-import HeatProgressCard from "@/components/ui/overview/DashboardHeatCard";
-import { ProgressBarCard } from "@/components/ui/overview/DashboardProgressBarCard";
-import { BarnStallCard } from "@/components/ui/overview/DashboardStallBarCard";
 
-export default function PlaceHolder() {
+import { Button } from "@/components/Button";
+import { Input } from "@/components/Input";
+import { Card, CardContent } from "@/components/ui/card";
+import api from "@/lib/axios";
+import { AnimatePresence, motion } from "framer-motion";
+import { CheckCircle2, FolderPlus, GitBranch, MapPinHouse } from "lucide-react";
+import { useState } from "react";
 
+export default function placeHolder() {
+    const [step, setStep] = useState<"start" | "farm" | "barn" | "stall">("start");
+
+    const [farmName, setFarmName] = useState("");
+    const [barnName, setBarnName] = useState("");
+    const [stallName, setStallName] = useState("");
+
+    const [farmId, setFarmId] = useState<string | null>(null);
+    const [barnId, setBarnId] = useState<string | null>(null);
+
+    const [loading, setLoading] = useState(false);
+
+    const handleAddFarm = async () => {
+        if (!farmName) return;
+        setLoading(true);
+        try {
+            const res = await api.post("/farms", { name: farmName });
+            setFarmId(res.data._id);
+            setFarmName("");
+            setStep("barn");
+        } catch (e) {
+            console.error("Error adding farm", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddBarn = async () => {
+        if (!barnName || !farmId) return;
+        setLoading(true);
+        try {
+            const res = await api.post("/barns", { name: barnName, farmId });
+            setBarnId(res.data._id);
+            setBarnName("");
+            setStep("stall");
+        } catch (e) {
+            console.error("Error adding barn", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddStall = async () => {
+        if (!stallName || !farmId || !barnId) return;
+        setLoading(true);
+        try {
+            await api.post("/stalls", {
+                name: stallName,
+                farmId,
+                barnId,
+            });
+            setStallName("");
+            window.location.reload(); // Force page reload
+        } catch (e) {
+            console.error("Error adding stall", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const ProgressStep = ({ label, active }: { label: string; active: boolean }) => (
+        <div className={`flex items-center gap-2 ${active ? "text-blue-600" : "text-gray-400"}`}>
+            <CheckCircle2 className={`h-5 w-5 ${active ? "text-green-500" : "text-gray-300"}`} />
+            <span>{label}</span>
+        </div>
+    );
+
+    const slideVariants = {
+        initial: { opacity: 0, x: 50 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -50 },
+    };
 
     return (
-        <>
-            <section aria-labelledby="current-status">
-                <h1
-                    id="current-status"
-                    className="scroll-mt-10 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
-                >
-                    Current Status
-                </h1>
-                <div className="mt-4 grid grid-cols-1 gap-14 sm:mt-8 sm:grid-cols-2 lg:mt-10 xl:grid-cols-3">
-                    <Card placeholder="No Data" />
-                    <ProgressBarCard
-                        title="Health Metrics"
-                        change="Healthy"
-                        value="85%"
-                        valueDescription="normal health indicators"
-                        ctaDescription="2 pigs require attention."
-                        ctaText="View details"
-                        ctaLink="/details"
-                        data={[]}
-                    />
+        <div className="mx-auto max-w-2xl space-y-8 p-6 text-center">
+            <h2 className="text-2xl font-semibold">Onboard Your Farm System</h2>
+            <div className="flex justify-center gap-6">
+                <ProgressStep label="Farm" active={step !== "start"} />
+                <ProgressStep label="Barn" active={step === "barn" || step === "stall"} />
+                <ProgressStep label="Stall" active={step === "stall"} />
+            </div>
 
-                    <BarnStallCard
-                        title="Barn/Stall Metrics"
-                        change="Farm 1"
-                        value="121"
-                        valueDescription="Total Pigs"
-                        ctaDescription="View stall details."
-                        ctaText="View details"
-                        ctaLink="/barn-stall-details"
-                        data={[]}
-                        barns={[]}
-                        selectedBarn={null}
-                        onBarnSelect={() => { }}
-                    />
+            <AnimatePresence mode="wait">
+                {step === "start" && (
+                    <motion.div
+                        key="start"
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        variants={slideVariants}
+                    >
+                        <Card className="rounded-xl border border-dashed shadow-md">
+                            <CardContent className="p-6 space-y-4">
+                                <p className="text-gray-600 dark:text-gray-400">
+                                    Let’s begin by adding your first farm. You can add barns and stalls afterward.
+                                </p>
+                                <Button onClick={() => setStep("farm")}>Start Onboarding</Button>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
 
+                {step === "farm" && (
+                    <motion.div
+                        key="farm"
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        variants={slideVariants}
+                    >
+                        <Card className="rounded-xl border border-blue-300 shadow-md">
+                            <CardContent className="p-6 space-y-4">
+                                <GitBranch className="mx-auto h-8 w-8 text-blue-500" />
+                                <h3 className="text-lg font-semibold">Add a Farm</h3>
+                                <Input placeholder="Farm Name" value={farmName} onChange={(e) => setFarmName(e.target.value)} />
+                                <Button onClick={handleAddFarm} disabled={loading}>
+                                    {loading ? "Adding..." : "Add Farm"}
+                                </Button>
+                                <div className="pt-4">
+                                    <Button variant="secondary" onClick={() => setStep("start")}>Back</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
 
-                    <FertilityProgressCard
-                        title="Fertility Metrics"
-                        change=""
-                        value="78%"
-                        valueDescription="optimal breeding conditions"
-                        ctaDescription="3 pigs ready for breeding."
-                        ctaText="View details"
-                        ctaLink="/fertility-details"
-                        data={[]}
-                    />
-                    <HeatProgressCard
-                        title="Heat Metrics"
-                        change=""
-                        value="89%"
-                        valueDescription="optimal breeding conditions"
-                        ctaDescription="3 pigs ready for breeding."
-                        ctaText="View details"
-                        ctaLink="/heat-status"
-                        data={[]}
-                    />
-                </div>
-            </section>
-            <section aria-labelledby="monitoring-overview">
-                <h1
-                    id="monitoring-overview"
-                    className="mt-16 scroll-mt-8 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
-                >
-                    Monitoring Overview
-                </h1>
-                <div className="sticky top-16 z-20 flex items-center justify-between border-b border-gray-200 bg-white pb-4 pt-4 sm:pt-6 lg:top-0 lg:mx-0 lg:px-0 lg:pt-8 dark:border-gray-800 dark:bg-gray-950">
+                {step === "barn" && (
+                    <motion.div
+                        key="barn"
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        variants={slideVariants}
+                    >
+                        <Card className="rounded-xl border border-purple-300 shadow-md">
+                            <CardContent className="p-6 space-y-4">
+                                <MapPinHouse className="mx-auto h-8 w-8 text-purple-500" />
+                                <h3 className="text-lg font-semibold">Add a Barn</h3>
+                                <Input placeholder="Barn Name" value={barnName} onChange={(e) => setBarnName(e.target.value)} />
+                                <Button onClick={handleAddBarn} disabled={loading}>
+                                    {loading ? "Adding..." : "Add Barn"}
+                                </Button>
+                                <div className="pt-4 flex justify-between">
+                                    <Button variant="secondary" onClick={() => setStep("farm")}>Back</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
 
-                </div>
-                <dl className="mt-10 grid grid-cols-1 gap-14 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-                    No Data
-                </dl>
-            </section>
-        </>
+                {step === "stall" && (
+                    <motion.div
+                        key="stall"
+                        initial="initial"
+                        animate="animate"
+                        exit="exit"
+                        variants={slideVariants}
+                    >
+                        <Card className="rounded-xl border border-green-300 shadow-md">
+                            <CardContent className="p-6 space-y-4">
+                                <FolderPlus className="mx-auto h-8 w-8 text-green-500" />
+                                <h3 className="text-lg font-semibold">Add a Stall</h3>
+                                <Input placeholder="Stall Name" value={stallName} onChange={(e) => setStallName(e.target.value)} />
+                                <Button onClick={handleAddStall} disabled={loading}>
+                                    {loading ? "Adding..." : "Add Stall"}
+                                </Button>
+                                <div className="pt-4">
+                                    <Button variant="secondary" onClick={() => setStep("barn")}>Back</Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 }
