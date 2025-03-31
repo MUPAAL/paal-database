@@ -48,9 +48,13 @@ Getting Started
 
 This command creates a new branch named `localDev` and switches you to it. Remember to replace `<user_name>` with your own git username. All changes you make now will be isolated from the main branch.
 
-### 3\. CInstall Local Dependancies with NPM 
+### 3\. Install Local Dependancies with PNPM 
 
-    npm install
+    pnpm install
+
+#### 3.1\, If PNPM Is not Installed
+    npm install -g pnpm
+
 
 this command allows you to install the local depos for the web application. This is crucial in actually running the application and not running into compile time errors with docker 
 
