@@ -62,9 +62,6 @@ this command allows you to install the local depos for the web application. This
 
 Create a `.env` file in the root directory with the following content (adjust as needed):
 
-# API URL FOR NEXT APP
-NEXT_PUBLIC_BASE_URL=http://localhost:8080
-
     # MongoDB Initialization Variables
     MONGO_INITDB_ROOT_USERNAME=PAAL 
     MONGO_INITDB_ROOT_PASSWORD=PAAL
@@ -88,40 +85,8 @@ NEXT_PUBLIC_BASE_URL=http://localhost:8080
 
 Docker Compose automatically loads a file named `.env` from the root directory when you run `docker compose up`.
 
-### 4\. Docker Compose Setup for MongoDB with Replica Set
 
-Our Docker Compose file sets up MongoDB with a replica set (`rs0`) and internal authentication using a key file.
-
-*   **Replica Set:** Even a single node runs as a replica set for future scalability.
-*   **Key File:** The key file is mounted from `./database/sslkey/security.keyFile` into the container at `/etc/secrets/security.keyFile`.
-*   **Authentication:** The `--auth` flag is enabled, and the admin user is automatically created from environment variables.
-
-Snippet from `docker-compose.yml`:
-
-    version: "3.8"
-    services:
-      mongo:
-        image: mongo:latest
-        container_name: ${DATABASE_HOST}
-        restart: always
-        env_file: .env
-        environment:
-          MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-          MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-          MONGO_INITDB_DATABASE: ${DATABASE_COLLECTION}
-        ports:
-          - ${DATABASE_PORT}:27017
-        networks:
-          - app-net
-        volumes:
-          - database-v:/data/db
-          - ./database/sslkey/security.keyFile:/etc/secrets/security.keyFile:rw
-        command: [ "mongod", "--replSet", "rs0", "--auth", "--keyFile", "/etc/secrets/security.keyFile" ]
-    
-
-After starting the container, connect to MongoDB and run the replica set initiation command (see RUNNING THE APPLICATION SECTION).
-
-### 5.1 \. Creating the Authentication SSL Key for `security.keyFile`
+### 4.1 \. Creating the Authentication SSL Key for `security.keyFile`
 
 To enable **internal authentication** for MongoDB using a **key file**, follow these steps:
 
@@ -303,6 +268,42 @@ Project Structure
     ├── Dockerfile.frontend       # Dockerfile for frontend build
     ├── backup_to_github.sh       # Database backup automation script
     └── README.md                 # This file
+
+Snippet into Docker Compose 
+---------------------------
+### 4\. Docker Compose Setup for MongoDB with Replica Set
+
+Our Docker Compose file sets up MongoDB with a replica set (`rs0`) and internal authentication using a key file.
+
+*   **Replica Set:** Even a single node runs as a replica set for future scalability.
+*   **Key File:** The key file is mounted from `./database/sslkey/security.keyFile` into the container at `/etc/secrets/security.keyFile`.
+*   **Authentication:** The `--auth` flag is enabled, and the admin user is automatically created from environment variables.
+
+Snippet from `docker-compose.yml`:
+
+    version: "3.8"
+    services:
+      mongo:
+        image: mongo:latest
+        container_name: ${DATABASE_HOST}
+        restart: always
+        env_file: .env
+        environment:
+          MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+          MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+          MONGO_INITDB_DATABASE: ${DATABASE_COLLECTION}
+        ports:
+          - ${DATABASE_PORT}:27017
+        networks:
+          - app-net
+        volumes:
+          - database-v:/data/db
+          - ./database/sslkey/security.keyFile:/etc/secrets/security.keyFile:rw
+        command: [ "mongod", "--replSet", "rs0", "--auth", "--keyFile", "/etc/secrets/security.keyFile" ]
+    
+
+After starting the container, connect to MongoDB and run the replica set initiation command (see RUNNING THE APPLICATION SECTION).
+
 
 How It All Works
 ----------------
