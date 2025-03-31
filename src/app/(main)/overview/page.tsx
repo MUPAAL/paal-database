@@ -10,6 +10,7 @@ import { subDays } from "date-fns";
 import React from "react";
 import { categories, maxDate } from "./components/constants";
 import PlaceHolder from "./components/placeholder";
+import PigOnboardingWalkthrough from "./components/placeHolderPig";
 import { useOverviewData } from "./components/useOverviewData";
 
 export default function Overview() {
@@ -79,8 +80,19 @@ export default function Overview() {
   }
 
   if (error) {
+    return <div> error </div>;
+  }
+
+  // return the onboarding for adding farms 
+  if ((barnStats.length < 1) || (stallStats.length < 1)) {
     return <div><PlaceHolder /></div>;
   }
+
+  if (stallStats.length > 0 && healthData[0].allowed < 1) {
+    return <div> <PigOnboardingWalkthrough /> </div>
+  }
+
+  console.log(stallStats.length);
 
 
   return (
