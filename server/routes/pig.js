@@ -539,6 +539,65 @@ router.get('/analytics/time-series', async (req, res) => {
   }
 })
 
+
+
+
+// GET /api/pigs/:pigId/posture-summary?range=30
+// routes/postureSummary.js
+const dayjs = require('dayjs');
+
+// GET /api/pigs/:pigId/posture-summary?range=30
+router.get('/pigs/:pigId/posture-summary', async (req, res) => {
+  try {
+    const pigId = parseInt(req.params.pigId);
+    const range = parseInt(req.query.range);
+    const validRanges = [7, 30, 60, 90, 180, 365];
+
+    if (!validRanges.includes(range)) {
+      return res.status(400).json({ error: 'Invalid range' });
+    }
+
+    const startDate = dayjs().subtract(range, 'day').startOf('day').toDate();
+
+    const data = await PigPosture.find({
+      pigId: pigId,
+      timestamp: { $gte: startDate }
+    });
+
+    // Group scores by date
+    const grouped = {};
+
+    data.forEach(({ score, timestamp }) => {
+      const dateKey = dayjs(timestamp).format('YYYY-MM-DD');
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      }
+      if (grouped[dateKey].hasOwnProperty(score)) {
+        grouped[dateKey][score]++;
+      }
+    });
+
+    // Fill out all days in the range (even if zeroes)
+    const result = [];
+    for (let i = 0; i < range; i++) {
+      const date = dayjs().subtract(i, 'day').format('YYYY-MM-DD');
+      const summary = grouped[date] || { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      summary.date = date;
+      result.push(summary);
+    }
+
+    // Optional: reverse to be chronological
+    result.reverse();
+
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+
 // Get pig analytics summary
 router.get('/analytics/summary', async (req, res) => {
   try {
