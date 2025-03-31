@@ -2,12 +2,13 @@
 import { BarChartVariant } from "@/components/BarChartVariantFull"
 import { Tooltip } from "@/components/Tooltip"
 import { Transaction } from "@/data/schema"
-import { transactions } from "@/data/transactions"
+import api from "@/lib/axios"
 import { AvailableChartColorsKeys } from "@/lib/chartUtils"
 import { cx, formatters } from "@/lib/utils"
 import { InfoIcon } from "lucide-react"
 import { useQueryState } from "nuqs"
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { number } from "zod"
 import { DEFAULT_RANGE, RANGE_DAYS, RangeKey } from "./dateRanges"
 
 interface ChartDataItem {
@@ -22,11 +23,7 @@ type ChartType = "amount" | "count" | "category" | "merchant"
 interface ChartConfig {
   title: string
   tooltipContent: string
-  processData: (
-    transactions: Transaction[],
-    filterDate: Date,
-    filters: Filters,
-  ) => ChartDataItem[]
+  processData: (pigId: number, range: number) => Promise<ChartDataItem[]>
   valueFormatter: (value: number) => string
   layout?: "horizontal" | "vertical"
   color: string
@@ -40,6 +37,13 @@ interface Filters {
   selectedCountries: string[]
 }
 
+const fetchPostureSummary = async (pigId: number, range: number) => {
+  const res = await api.get(`/pigs/pigs/${pigId}/posture-summary?range=${range}`)
+  if (res.status < 200 || res.status >= 300) throw new Error("Failed to fetch posture data")
+  return res.data
+}
+
+
 // Generate random integer values (1-5) for each day
 const generateDailyIntegerData = (days: number) => {
   const data = []
@@ -51,7 +55,7 @@ const generateDailyIntegerData = (days: number) => {
 
     // Generate random counts for each value (1-5)
     const total = 100 // Total observations per day
-    const values = [1, 2, 3, 4, 5]
+    const values = [0, 1, 2, 3, 4, 5]
     let remaining = total
     const counts: { [key: number]: number } = {}
 
@@ -71,6 +75,8 @@ const generateDailyIntegerData = (days: number) => {
     })
   }
 
+  console.log(data)
+
   return data
 }
 
@@ -79,9 +85,8 @@ const chartConfigs: Record<ChartType, ChartConfig> = {
     title: "Daily Integer Value Distribution",
     tooltipContent: "Distribution of integer values (1-5) recorded each day",
     color: "blue",
-    processData: (transactions, filterDate, filters) => {
-      const days = Math.ceil((new Date().getTime() - filterDate.getTime()) / (1000 * 60 * 60 * 24))
-      return generateDailyIntegerData(days)
+    processData: async (pigId: number, range: number): Promise<ChartDataItem[]> => {
+      return await fetchPostureSummary(pigId, range)
     },
     valueFormatter: (number: number) => `${number}%`,
     xValueFormatter: (dateString: string) => {
@@ -97,9 +102,9 @@ const chartConfigs: Record<ChartType, ChartConfig> = {
     title: "Transaction Count",
     tooltipContent:
       "Total number of transactions for the selected period and amount range.",
-    processData: (transactions, filterDate, filters) => {
+    processData: async (pigId: number, range: number) => {
       const countedData: Record<string, number> = {}
-      transactions.forEach((transaction) => {
+      number.forEach((number) => {
         const date = transaction.transaction_date.split("T")[0]
         if (isTransactionValid(transaction, filterDate, filters)) {
           countedData[date] = (countedData[date] || 0) + 1
@@ -123,26 +128,30 @@ const chartConfigs: Record<ChartType, ChartConfig> = {
     },
   },
   category: {
-    title: "Top 5 Categories by Transaction Amount",
-    tooltipContent:
-      "Total amount of transactions for the top 5 categories in the selected period and amount range.",
-    processData: (transactions, filterDate, filters) => {
-      const categoryTotals: Record<string, number> = {}
-      transactions.forEach((transaction) => {
-        if (isTransactionValid(transaction, filterDate, filters)) {
-          categoryTotals[transaction.category] =
-            (categoryTotals[transaction.category] || 0) + transaction.amount
-        }
-      })
-      return Object.entries(categoryTotals)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([category, value]) => ({ key: category, value }))
-    },
-    valueFormatter: (number: number) =>
-      formatters.currency({ number: number, maxFractionDigits: 0 }),
+    title: "Top 5 Posture Scores",
+    tooltipContent: "Most frequently observed posture scores over the selected date range.",
     layout: "vertical",
     color: "emerald",
+    processData: async (pigId: number, range: number): Promise<ChartDataItem[]> => {
+      const postureData = await fetchPostureSummary(pigId, range)
+
+      // Aggregate posture counts across all days
+      const totalCounts: Record<string, number> = {}
+
+      for (const day of postureData) {
+        for (const [score, count] of Object.entries(day)) {
+          if (score === "date") continue
+          totalCounts[score] = (totalCounts[score] || 0) + (count as number)
+        }
+      }
+
+      // Sort top 5 scores by frequency
+      return Object.entries(totalCounts)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([key, value]) => ({ key, value }))
+    },
+    valueFormatter: (number: number) => number.toString(),
   },
   merchant: {
     title: "Top 5 Merchants by Transaction Amount",
@@ -223,44 +232,48 @@ export function TransactionChart({
   }, [amountRange])
 
   const config = chartConfigs[type]
+  const [chartData, setChartData] = useState<ChartDataItem[]>([])
 
-  const chartData = useMemo(() => {
-    const currentDate = new Date()
-    const filterDate = new Date(currentDate)
-    const daysToSubtract = RANGE_DAYS[range] || RANGE_DAYS[DEFAULT_RANGE]
-    filterDate.setDate(currentDate.getDate() - daysToSubtract)
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const days = RANGE_DAYS[range] || RANGE_DAYS[DEFAULT_RANGE]
+        const data = await chartConfigs[type].processData(1, days) // Replace 1 with dynamic pigId if needed
 
-    const filters: Filters = {
-      expenseStatus,
-      minAmount,
-      maxAmount,
-      selectedCountries,
-    }
+        if (type === "amount" && showPercentage) {
+          const percentageData = data.map(day => {
+            const total = Object.entries(day)
+              .filter(([key]) => !isNaN(Number(key)))
+              .reduce((sum, [, count]) => sum + (count as number), 0)
 
-    const data = config.processData(transactions, filterDate, filters)
+            const percentages: any = { date: day.date }
+            Object.entries(day)
+              .filter(([key]) => !isNaN(Number(key)))
+              .forEach(([value, count]) => {
+                percentages[value] = ((count as number) / total) * 100
+              })
 
-    // For amount type (integer values 1-5), calculate percentages
-    if (type === "amount" && showPercentage) {
-      return data.map(day => {
-        const total = Object.entries(day)
-          .filter(([key]) => !isNaN(Number(key)))
-          .reduce((sum, [, count]) => sum + (count as number), 0)
-
-        const percentages: any = { date: day.date }
-        Object.entries(day)
-          .filter(([key]) => !isNaN(Number(key)))
-          .forEach(([value, count]) => {
-            percentages[value] = ((count as number) / total) * 100
+            return percentages
           })
 
-        return percentages
-      })
+          setChartData(percentageData)
+        } else {
+          setChartData(data)
+        }
+      } catch (err) {
+        console.error("Failed to fetch chart data", err)
+      }
     }
 
-    return data
-  }, [range, expenseStatus, minAmount, maxAmount, selectedCountries, config, type, showPercentage])
+    loadData()
+  }, [range, type, showPercentage])
+  const categories =
+    type === "amount"
+      ? ["0", "1", "2", "3", "4", "5"]
+      : type === "category"
+        ? chartData.map((item) => item.key as string)
+        : ["value"]
 
-  const categories = type === "amount" ? ["1", "2", "3", "4", "5"] : ["value"]
   const colors: AvailableChartColorsKeys[] = type === "amount"
     ? ["blue", "emerald", "violet", "amber", "gray"]
     : [config.color as AvailableChartColorsKeys]
