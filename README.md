@@ -85,6 +85,7 @@ NEXT_PUBLIC_BASE_URL=http://localhost:8080
     # API URL for React App
     REACT_APP_API_URL=http://localhost:8080
     NEXT_PUBLIC_API_URL=http://localhost:8080
+    NEXT_PUBLIC_BASE_URL=http://localhost:8080
 
 
 Docker Compose automatically loads a file named `.env` from the root directory when you run `docker compose up`.
