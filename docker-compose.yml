@@ -4,8 +4,12 @@ services:
     container_name: ${DATABASE_HOST}
     restart: always
     env_file: .env
+    # build:
+    #   context: ./database
+    #   dockerfile: Dockerfile.mongo
+     #we comment this out because MONGO_INITDB depreciated auth, and we use --auth
     environment:
-      #this will allow for direct connection to database vars via ENV file constraints
+       #this will allow for direct connection to database vars via ENV file constraints
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: ${DATABASE_COLLECTION}
@@ -13,11 +17,24 @@ services:
       - ${DATABASE_PORT}:${DATABASE_PORT}
     networks:
       - app-net
+    command: [ "mongod", "--replSet", "rs0", "--keyFile", "/etc/secrets/security.keyFile" ]
     volumes:
       - database-v:/data/db
-      - ./database/sslkey/security.keyFile:/etc/secrets/security.keyFile:rw
-      - ./database/init-user.js:/docker-entrypoint-initdb.d/init-user.js:ro
-    command: [ "mongod", "--replSet", "rs0", "--auth", "--keyFile", "/etc/secrets/security.keyFile" ]
+      - ./database/sslkey/security.keyFile:/etc/secrets/security.keyFile:ro
+
+  mongo-init:
+    image: mongo:latest
+    container_name: mongo-init
+    depends_on:
+      - mongo
+    restart: "on-failure"
+    entrypoint: ["/bin/bash", "/setup.sh"]
+    volumes:
+      - ./database/setup.sh:/setup.sh:ro
+      - .env:/env/.env:ro #mounting .env so we can hide login info from script
+    networks:
+      - app-net
+
 
   backend:
     image: server:1.0.0
