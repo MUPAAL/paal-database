@@ -712,9 +712,7 @@ export function FarmerManagementDrawer({ open, onOpenChange }: PigDrawerProps) {
                 <Button variant="secondary" onClick={() => setCurrentPage(1)}>
                     Back
                 </Button>
-                <Button onClick={handleSubmit} disabled={isSubmitting}>
-                    {isSubmitting ? "Submitting..." : "Submit Pig Data"}
-                </Button>
+
             </>
         )
     }

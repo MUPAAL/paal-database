@@ -153,49 +153,46 @@ export default function PigDashboard() {
           <div className="space-y-4">
             <Tabs defaultValue="bcs">
               <TabsList>
-                <TabsTrigger value="bcs">BCS Data</TabsTrigger>
-                <TabsTrigger value="vulva">Vulva Swelling</TabsTrigger>
+                <TabsTrigger value="bcs">LineChart Overview</TabsTrigger>
+                <TabsTrigger value="vulva">BarChart Overview</TabsTrigger>
                 <TabsTrigger value="breathing">Breathing Rate</TabsTrigger>
               </TabsList>
               <TabsContent value="bcs">
-                <LineChart
-                  yAxisWidth={70}
-                  type="bcs"
-                  className="hidden sm:block"
-                />
-                <LineChart showYAxis={false} type="bcs" className="sm:hidden" />
-                <LineChart
-                  yAxisWidth={70}
-                  type="vulva"
-                  className="hidden sm:block"
-                />
-                <LineChart
-                  showYAxis={false}
-                  type="vulva"
-                  className="sm:hidden"
-                />
-                <LineChart
-                  yAxisWidth={70}
-                  type="breathing"
-                  className="hidden sm:block"
-                />
-                <LineChart
-                  showYAxis={false}
-                  type="breathing"
-                  className="sm:hidden"
-                />
+                <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20 my-10">
+
+                  <LineChart
+                    yAxisWidth={70}
+                    type="bcs"
+                    className="hidden sm:block"
+                  />
+                  <LineChart showYAxis={false} type="bcs" className="sm:hidden" />
+                  <LineChart
+                    yAxisWidth={70}
+                    type="vulva"
+                    className="hidden sm:block"
+                  />
+                  <LineChart
+                    showYAxis={false}
+                    type="vulva"
+                    className="sm:hidden"
+                  />
+                  <LineChart
+                    yAxisWidth={70}
+                    type="breathing"
+                    className="hidden sm:block"
+                  />
+                  <LineChart
+                    showYAxis={false}
+                    type="breathing"
+                    className="sm:hidden"
+                  />
+                </div>
               </TabsContent>
               <TabsContent value="vulva">
-                <LineChart
-                  yAxisWidth={70}
-                  type="vulva"
-                  className="hidden sm:block"
-                />
-                <LineChart
-                  showYAxis={false}
-                  type="vulva"
-                  className="sm:hidden"
-                />
+                <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
+                  <TransactionChart yAxisWidth={100} type="category" />
+                  {/* <TransactionChart yAxisWidth={100} type="merchant" /> */}
+                </div>
               </TabsContent>
               <TabsContent value="breathing">
                 <LineChart
@@ -212,10 +209,7 @@ export default function PigDashboard() {
             </Tabs>
           </div>
 
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
-            <TransactionChart yAxisWidth={100} type="category" />
-            <TransactionChart yAxisWidth={100} type="merchant" />
-          </div>
+
         </div>
       </section>
     </div>

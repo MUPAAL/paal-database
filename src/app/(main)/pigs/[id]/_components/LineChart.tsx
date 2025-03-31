@@ -93,13 +93,15 @@ export function LineChart({
         yAxisWidth={yAxisWidth}
         showYAxis={showYAxis}
         showLegend={false}
-        showGridLines={true}
+        showGridLines={false}
         startEndOnly={false}
         showTooltip={true}
         autoMinValue={true}
-        allowDecimals={true}
+        allowDecimals={false}
+        enableLegendSlider={true}
         xAxisLabel="Date"
         yAxisLabel={chartTitle}
+
       />
     </div>
   )
