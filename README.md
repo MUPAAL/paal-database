@@ -50,11 +50,9 @@ This command creates a new branch named `localDev` and switches you to it. Remem
 
 ### 3\. Install Local Dependancies with PNPM 
 
+    npm install
     pnpm install 
 
-If PNPM Is not Installed
-
-    npm install -g pnpm
 
 this command allows you to install the local depos for the web application. This is crucial in actually running the application and not running into compile time errors with docker 
 
