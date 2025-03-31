@@ -50,13 +50,14 @@ This command creates a new branch named `localDev` and switches you to it. Remem
 
 ### 3\. Install Local Dependancies with PNPM 
 
-    pnpm install
+    pnpm install 
 
-#### 3.1\, If PNPM Is not Installed
+If PNPM Is not Installed
+
     npm install -g pnpm
 
-
 this command allows you to install the local depos for the web application. This is crucial in actually running the application and not running into compile time errors with docker 
+
 
 ### 4\. Set Up Environment Variables
 
@@ -98,7 +99,7 @@ Ensure that the directory structure exists on your host machine:
 
 This will create the `sslkey` directory inside `database/`.
 
-#### Step 2: Generate the Key File
+### Step 2: Generate the Key File
 
 Run the following command to create a **random key** and save it to `security.keyFile`:
 
@@ -106,7 +107,7 @@ Run the following command to create a **random key** and save it to `security.ke
 
 This generates a **756-byte** base64-encoded key (recommended by MongoDB) and saves it to `security.keyFile`.
 
-#### Step 3: Set Proper Permissions
+### Step 3: Set Proper Permissions
 
 
 MongoDB requires that the key file is **only readable** by the owner (`600` permissions):
@@ -115,7 +116,7 @@ MongoDB requires that the key file is **only readable** by the owner (`600` perm
 
 This ensures that only the owner can read and write the key file.
 
-##### Step 4: Verify the Key File
+### Step 4: Verify the Key File
 
 You can check the contents of the key file to confirm it was generated correctly:
 
@@ -132,11 +133,11 @@ You should see a long base64-encoded string.
 
 ### 2\. Initiate the MongoDB Replica Set
 
-Once MongoDB is running, connect to it with authentication from the admin database (this is a seperate database from PAAL that sets the user Auth) :
+#### 2.1\.Once MongoDB is running, connect to it with authentication from the admin database (this is a seperate database from PAAL that sets the user Auth) :
 
     mongosh "mongodb://PAAL:PAAL@127.0.0.1:27017/admin?authSource=admin"
 
-Then, initiate the replica set:
+#### 2.2\.Then, initiate the replica set:
 
     rs.initiate({
       _id: "rs0",
@@ -145,7 +146,7 @@ Then, initiate the replica set:
       ]
     })
 
-Verify the configuration:
+#### 2.3\. (OPTIONAL) Verify the configuration:
 
     rs.status()
 
