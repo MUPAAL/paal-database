@@ -290,8 +290,13 @@ router.post('/', async (req, res) => {
   try {
     const { pigId, tag, breed, age, currentLocation } = req.body
     
+    // Validate pigId
+    if (typeof pigId !== 'string' && typeof pigId !== 'number') {
+      return res.status(400).json({ error: 'Invalid pigId' })
+    }
+    
     // Check if pig with this ID already exists
-    const existingPig = await Pig.findOne({ pigId: pigId })
+    const existingPig = await Pig.findOne({ pigId: { $eq: pigId } })
     if (existingPig) {
       return res.status(400).json({ error: 'Pig with this ID already exists' })
     }
