@@ -137,6 +137,10 @@ You should see a long base64-encoded string.
 
     mongosh "mongodb://PAAL:PAAL@127.0.0.1:27017/admin?authSource=admin"
 
+or if mongosh isn't installed on machine. Load through docker container using command: 
+
+    docker exec -it mongo-c mongosh -u PAAL -p PAAL --authenticationDatabase admin
+
 #### 2.2\.Then, initiate the replica set:
 
     rs.initiate({
