@@ -99,6 +99,7 @@ export function LineChart({
         autoMinValue={true}
         allowDecimals={false}
         enableLegendSlider={true}
+
         xAxisLabel="Date"
         yAxisLabel={chartTitle}
 
