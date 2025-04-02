@@ -112,7 +112,6 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls }: FirstPagePr
     <>
       <DrawerHeader>
         <DrawerTitle>
-          <p>Add Pig Details</p>
           <span className="text-sm font-normal text-gray-500 dark:text-gray-500">
             Farm, Barn & Stall Information
           </span>
