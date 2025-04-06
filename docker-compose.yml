@@ -7,9 +7,9 @@ services:
     # build:
     #   context: ./database
     #   dockerfile: Dockerfile.mongo
-     #we comment this out because MONGO_INITDB depreciated auth, and we use --auth
+    #we comment this out because MONGO_INITDB depreciated auth, and we use --auth
     environment:
-       #this will allow for direct connection to database vars via ENV file constraints
+      #this will allow for direct connection to database vars via ENV file constraints
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: ${DATABASE_COLLECTION}
@@ -28,19 +28,34 @@ services:
     depends_on:
       - mongo
     restart: "on-failure"
-    entrypoint: ["/bin/bash", "/setup.sh"]
+    entrypoint: [ "/bin/bash", "/setup.sh" ]
     volumes:
       - ./database/setup.sh:/setup.sh:ro
       - .env:/env/.env:ro #mounting .env so we can hide login info from script
     networks:
       - app-net
 
+  seed-admin:
+    image: server:1.0.0
+    container_name: seed-admin
+    depends_on:
+      - mongo
+      - mongo-init
+      - backend
+    restart: "on-failure"
+    command: [ "node", "/usr/server/server/scripts/create-direct-users.js" ]
+    env_file: .env
+    networks:
+      - app-net
+    volumes:
+      - ./:/usr/server
 
   backend:
     image: server:1.0.0
     build:
       context: .
       dockerfile: Dockerfile.backend
+      target: dev
     container_name: ${SERVER_HOST}
     depends_on:
       - mongo
@@ -50,15 +65,14 @@ services:
     ports:
       - ${SERVER_PORT}:${SERVER_PORT}
     volumes:
-      - ./:/usr/server
-      #  for production when ready 
-      - ./server:/server
-      - server-v-node-modules:/server/node_modules
+      - ./server:/usr/src/app/server
+      - backend-node-modules:/usr/src/app/node_modules
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.dev
+      target: dev
     container_name: frontend
     depends_on:
       - backend
@@ -68,7 +82,13 @@ services:
       - "3000:3000"
     env_file: .env
     volumes:
-      - ./:/usr/src/app
+      - ./src:/usr/src/app/src
+      - ./public:/usr/src/app/public
+      - ./next.config.mjs:/usr/src/app/next.config.mjs
+      - ./tailwind.config.ts:/usr/src/app/tailwind.config.ts
+      - ./postcss.config.mjs:/usr/src/app/postcss.config.mjs
+      - ./tsconfig.json:/usr/src/app/tsconfig.json
+      - frontend-node-modules:/usr/src/app/node_modules
 
   nginx:
     image: nginx:alpine
@@ -88,7 +108,9 @@ networks:
     driver: bridge
 
 volumes:
-  server-v-node-modules:
-    name: "server-v-node-modules"
+  backend-node-modules:
+    name: "backend-node-modules"
+  frontend-node-modules:
+    name: "frontend-node-modules"
   database-v:
     name: "database-v"
