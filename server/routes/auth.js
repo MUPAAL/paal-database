@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const authMiddleware = require('../middleware/auth');
+const { authenticateJWT, isAdmin } = require('../middleware/authMiddleware');
 const rateLimit = require('express-rate-limit');
 
 // Rate limiter for login attempts
@@ -17,7 +17,7 @@ const loginLimiter = rateLimit({
 });
 
 // Register a new user (admin only)
-router.post('/register', authMiddleware, async (req, res) => {
+router.post('/register', authenticateJWT, isAdmin, async (req, res) => {
   try {
     // Check if requester is admin
     if (req.user.role !== 'admin') {
@@ -109,8 +109,14 @@ router.post('/login', loginLimiter, async (req, res) => {
     console.log('Password matches');
 
     // Update last login
-    user.lastLogin = new Date();
-    await user.save();
+    try {
+      user.lastLogin = new Date();
+      // Use updateOne instead of save to avoid issues with ID format
+      await User.updateOne({ email: user.email }, { lastLogin: new Date() });
+    } catch (saveError) {
+      console.error('Error updating lastLogin:', saveError);
+      // Continue with login even if lastLogin update fails
+    }
 
     // Generate JWT token
     console.log('Generating JWT token with secret:', process.env.JWT_SECRET ? 'Secret exists' : 'No secret found');
@@ -143,7 +149,7 @@ router.post('/login', loginLimiter, async (req, res) => {
 });
 
 // Get current user
-router.get('/me', authMiddleware, async (req, res) => {
+router.get('/me', authenticateJWT, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
       .select('-password')
@@ -161,7 +167,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 });
 
 // Change password
-router.post('/change-password', authMiddleware, async (req, res) => {
+router.post('/change-password', authenticateJWT, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
@@ -190,6 +196,28 @@ router.post('/change-password', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Change password error:', error);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Verify token and return user info
+router.get('/token', authenticateJWT, async (req, res) => {
+  try {
+    // Find user by ID
+    const user = await User.findById(req.user.id)
+      .select('-password -__v')
+      .populate('assignedFarm', 'name location');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      user,
+      token: req.token // Return the token that was used for authentication
+    });
+  } catch (error) {
+    console.error('Error verifying token:', error);
+    res.status(500).json({ error: 'Failed to verify token' });
   }
 });
 

@@ -23,6 +23,7 @@ const PigVulvaSwelling = require('./models/PigVulvaSwelling');
 const PigBreathRate = require('./models/PigBreathRate');
 const Device = require('./models/Device');
 const DeviceData = require('./models/TemperatureData');
+const User = require('./models/User');
 
 function getRandomItem(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -57,7 +58,7 @@ async function seedDatabase() {
       console.log('ℹ️ No existing pigs collection to drop');
     }
 
-    // Clean DB
+    // Clean DB (except users)
     await Promise.all([
       Farm.deleteMany({}),
       Barn.deleteMany({}),
@@ -72,6 +73,34 @@ async function seedDatabase() {
       Device.deleteMany({}),
       DeviceData.deleteMany({})
     ]);
+
+    // Create admin user if it doesn't exist
+    const adminId = '67f1cac0399bf2dda1ea08a8';
+    const adminExists = await User.findOne({ email: 'admin@test.com' });
+
+    if (!adminExists) {
+      // Create admin user with specific ID
+      const admin = new User({
+        _id: adminId,
+        email: 'admin@test.com',
+        password: 'admin123', // This will be hashed by the pre-save hook
+        firstName: 'Admin',
+        lastName: 'User',
+        role: 'admin',
+        isActive: true,
+        lastLogin: new Date()
+      });
+      await admin.save();
+      console.log('👤 Created admin user with ID:', adminId);
+    } else {
+      // Update existing admin user to have the correct ID if needed
+      if (adminExists._id.toString() !== adminId) {
+        console.log('⚠️ Admin user exists but with different ID. Current ID:', adminExists._id);
+        console.log('⚠️ This may cause issues with login. Consider dropping the database and reseeding.');
+      } else {
+        console.log('👤 Admin user already exists with correct ID');
+      }
+    }
 
     const farms = [];
     for (let i = 1; i <= 2; i++) {
@@ -135,8 +164,8 @@ async function seedDatabase() {
     };
 
     for (let pig of pigs) {
-      const pigId = pig.pigId; 
-      await PigHealthStatus.insertMany(timestamps.map(ts => ({ pigId , timestamp: ts, status: getRandomItem(statuses.health) })));
+      const pigId = pig.pigId;
+      await PigHealthStatus.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, status: getRandomItem(statuses.health) })));
       await PigFertility.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, status: getRandomItem(statuses.fertility) })));
       await PigHeatStatus.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, status: getRandomItem(statuses.heat) })));
       await PigPosture.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, score: getRandomInt(1, 5) })));
@@ -166,6 +195,37 @@ async function seedDatabase() {
         timestamp: ts,
         temperature: getRandomFloat(20, 30, 1)
       })));
+    }
+
+    // Create farmer user if it doesn't exist
+    const farmerId = '67f1cac0399bf2dda1ea08a9';
+    const farmerExists = await User.findOne({ email: 'farmer@test.com' });
+
+    if (!farmerExists) {
+      // Get the first farm
+      const farm = farms[0];
+
+      const farmer = new User({
+        _id: farmerId,
+        email: 'farmer@test.com',
+        password: 'farmer123', // This will be hashed by the pre-save hook
+        firstName: 'Farmer',
+        lastName: 'User',
+        role: 'farmer',
+        assignedFarm: farm._id,
+        isActive: true,
+        lastLogin: new Date()
+      });
+      await farmer.save();
+      console.log('👨‍🌾 Created farmer user with ID:', farmerId);
+    } else {
+      // Update existing farmer user to have the correct ID if needed
+      if (farmerExists._id.toString() !== farmerId) {
+        console.log('⚠️ Farmer user exists but with different ID. Current ID:', farmerExists._id);
+        console.log('⚠️ This may cause issues with login. Consider dropping the database and reseeding.');
+      } else {
+        console.log('👨‍🌾 Farmer user already exists with correct ID');
+      }
     }
 
     console.log('\n🎉 Database seeded successfully!');

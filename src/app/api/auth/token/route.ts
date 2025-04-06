@@ -1,28 +1,37 @@
-import { auth } from "@clerk/nextjs";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 
 export async function GET() {
   try {
-    const { userId } = auth();
-    
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Get token from cookies
+    const cookieStore = cookies();
+    const token = cookieStore.get('token')?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "No token found" }, { status: 401 });
     }
-    
-    // Create JWT token
-    const token = jwt.sign(
-      { sub: userId },
-      process.env.JWT_SECRET || "default_secret",
-      { expiresIn: "1h" }
-    );
-    
-    return NextResponse.json({ token });
+
+    // Forward the token to the backend API
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://backend:5005'}/api/auth/token`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: "Failed to validate token" },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error: any) {
-    console.error("Error generating token:", error);
-    
+    console.error("Error validating token:", error);
+
     return NextResponse.json(
-      { error: error.message || "Failed to generate token" },
+      { error: error.message || "Failed to validate token" },
       { status: 500 }
     );
   }

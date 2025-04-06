@@ -36,6 +36,8 @@ app.use('/api/upload/postureupload', require('./routes/upload/postureUpload'));
 app.use('/api/systemmanagement', require('./routes/system-management/management'));
 app.use('/api/users', require('./routes/user'));
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/system', require('./routes/system'));
+app.use('/api/farms', require('./routes/farm'));
 
 // Database Connection
 const DATABASE_HOST = process.env.DATABASE_HOST;

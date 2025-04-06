@@ -1,13 +1,39 @@
+# PAAL Monitoring System
 
-PAAL Research Web Page
-======================
+PAAL (Precision Agriculture and Animal Livestock) Monitoring System is a comprehensive web application designed for agricultural operations management. This system provides real-time monitoring, data analytics, and management tools for farms, barns, stalls, and livestock.
 
-Hey,
+## Table of Contents
 
-This is the documentation for the local developemnt for the PAAL Web Page project. This is a short !read-me with general set-up instructions and workflow  guide for other developers to understand the project on a higher-level. This guide covers full setup—instructions, that anyone with little development knowledge can understand (hopefully). You will learn how to set up Docker, MongoDB running on replica sets, environment variable management, and our development workflow. With these instructions, you should be able to clone the repository from the `localDev` branch and run everything seamlessly.
+- [Overview](#overview)
+- [Features](#features)
+- [System Requirements](#system-requirements)
+- [Installation Guide](#installation-guide)
+  - [Prerequisites](#prerequisites)
+  - [Step-by-Step Installation](#step-by-step-installation)
+- [Usage Guide](#usage-guide)
+  - [Logging In](#logging-in)
+  - [Dashboard](#dashboard)
+  - [Farm Management](#farm-management)
+  - [System Settings](#system-settings)
+- [Troubleshooting](#troubleshooting)
+- [Maintenance](#maintenance)
+- [Support](#support)
+- [Developer Documentation](#developer-documentation)
 
-Tech Stack
-----------
+## Overview
+
+PAAL Monitoring System is an enterprise-grade application that helps farm owners and managers monitor and manage their agricultural operations efficiently. The system provides a user-friendly interface for tracking livestock health, farm conditions, and operational metrics.
+
+## Features
+
+- **Real-time Monitoring**: Track all your farm operations with real-time data and analytics
+- **Enterprise Security**: Industry-leading security protocols to protect your data
+- **Advanced Analytics**: Make data-driven decisions with comprehensive analytics
+- **Role-Based Access Control**: Admin and Farmer user roles with appropriate permissions
+- **Farm Management**: View and edit farm details, barns, stalls, and livestock
+- **System Administration**: Backup & restore, maintenance, and system logs
+
+## Tech Stack
 
 ### Frontend
 
@@ -24,8 +50,16 @@ Tech Stack
 *   MongoDB (configured as a replica set for high availability & authentication)
 *   Mongoose
 
-Prerequisites
--------------
+## System Requirements
+
+- **Operating System**: Windows 10/11, macOS 10.15+, or Linux (Ubuntu 20.04+ recommended)
+- **Processor**: 2 GHz dual-core processor or better
+- **Memory**: 4 GB RAM minimum (8 GB recommended)
+- **Storage**: 10 GB available space
+- **Internet Connection**: Broadband internet connection
+- **Software**: Docker and Docker Compose
+
+## Prerequisites
 
 *   Node.js 18.x or higher
 *   MongoDB (no need for a local install if using Docker)
@@ -48,13 +82,13 @@ Getting Started
 
 This command creates a new branch named `localDev` and switches you to it. Remember to replace `<user_name>` with your own git username. All changes you make now will be isolated from the main branch.
 
-### 3\. Install Local Dependancies with PNPM 
+### 3\. Install Local Dependancies with PNPM
 
     npm install
-    pnpm install 
+    pnpm install
 
 
-this command allows you to install the local depos for the web application. This is crucial in actually running the application and not running into compile time errors with docker 
+this command allows you to install the local depos for the web application. This is crucial in actually running the application and not running into compile time errors with docker
 
 
 ### 4\. Set Up Environment Variables
@@ -62,20 +96,20 @@ this command allows you to install the local depos for the web application. This
 Create a `.env` file in the root directory with the following content (adjust as needed):
 
     # MongoDB Initialization Variables
-    MONGO_INITDB_ROOT_USERNAME=PAAL 
+    MONGO_INITDB_ROOT_USERNAME=PAAL
     MONGO_INITDB_ROOT_PASSWORD=PAAL
     MONGO_INITDB_DATABASE=paalab
-    
+
     # MongoDB Connection Settings
     DATABASE_HOST=mongo-c
     DATABASE_PORT=27017
     DATABASE_COLLECTION=paalab
-    
+
     # Backend & Server Variables
     SERVER_HOST=server-c
     SERVER_PORT=5005
     PORT=3000
-    
+
     # API URL for React App
     REACT_APP_API_URL=http://localhost:8080
     NEXT_PUBLIC_API_URL=http://localhost:8080
@@ -125,7 +159,7 @@ You should see a long base64-encoded string.
 
 ### 5\. Starting the Mongo Replicaset
 
-### 1\. Start the Mongo Docker 
+### 1\. Start the Mongo Docker
 
     docker compose up --build mongo -d
 
@@ -135,7 +169,7 @@ You should see a long base64-encoded string.
 
     mongosh "mongodb://PAAL:PAAL@127.0.0.1:27017/admin?authSource=admin"
 
-or if mongosh isn't installed on machine. Load through docker container using command: 
+or if mongosh isn't installed on machine. Load through docker container using command:
 
     docker exec -it mongo-c mongosh -u PAAL -p PAAL --authenticationDatabase admin
 
@@ -152,20 +186,53 @@ or if mongosh isn't installed on machine. Load through docker container using co
 
     rs.status()
 
-Starting the Application 
------------------------
+## Usage Guide
 
-### 1\. closing the mongo Docker Image after Initiating rs0 image 
+### Logging In
+
+1. On the login page, use one of the following test accounts:
+   - Admin: `admin@test.com` / `admin123`
+   - Farmer: `farmer@test.com` / `farmer123`
+
+2. Click the "Sign In" button
+
+### Dashboard
+
+The dashboard provides an overview of your farm operations:
+
+- **Admin Dashboard**: Shows system information, user statistics, and farm metrics
+- **Farmer Dashboard**: Shows farm-specific information and livestock metrics
+
+### Farm Management
+
+1. Navigate to the "Farms" section in the sidebar
+2. View the list of farms
+3. Click on a farm to view details
+4. Use the "Edit" button to modify farm information
+
+### System Settings
+
+**Admin users only:**
+
+1. Navigate to the "System" section in the sidebar
+2. Access various system settings:
+   - **Backup & Restore**: Create and restore system backups
+   - **Maintenance**: Perform system maintenance tasks
+   - **System Logs**: View system activity logs
+
+## Starting the Application
+
+### 1\. closing the mongo Docker Image after Initiating rs0 image
 
     docker compose down
 
-this will close the docker image that you created the rs0 image in 
+this will close the docker image that you created the rs0 image in
 
-### 2\. Starting the web service 
+### 2\. Starting the web service
 
     docker compose up --build -d
 
-this with start the entire ecosystem for this design where you can access everything. 
+this with start the entire ecosystem for this design where you can access everything.
 
 ### 3\. Start the Development Servers
 
@@ -176,10 +243,10 @@ Make sure your frontend is running on port `8080` and your backend on port `8080
 *   **Test Application:** Run the application to ensure it connects to MongoDB correctly.
 *   **Check Containers:** Use `docker ps` to verify that all containers are running.
 *   **Logs:** For troubleshooting, view logs with:
-    
+
         docker-compose logs mongo
 
-  
+
 ### 6\. Seed the Database (Optional)
 
 Now, when you first load the DB there will be no data. Lets populate it with some prop data, run:
@@ -189,20 +256,58 @@ Now, when you first load the DB there will be no data. Lets populate it with som
 
 *We first load into the Docker CLI to execute our seed command, because the connection to the database is over the docker-network*
 
-Connecting to Database Via Compass 
+Connecting to Database Via Compass
 ---------------------
 
-## Using mongodb Compass. 
+## Using mongodb Compass.
 
-### 1\. Open compass connection window and enter this connection string 
-    
+### 1\. Open compass connection window and enter this connection string
+
     mongodb://PAAL:PAAL@localhost:27017/?directConnection=true
 
-This will allow you to connect directly connect to the database via compass to see visual changes and updated to the database. 
-    
+This will allow you to connect directly connect to the database via compass to see visual changes and updated to the database.
 
-Backup & Restore
-----------------
+
+## Troubleshooting
+
+### Common Issues
+
+#### Application Not Starting
+
+1. Ensure Docker is running
+2. Check if the ports are available (8080 for the frontend, 27017 for MongoDB)
+3. Check the logs:
+   ```
+   docker-compose logs
+   ```
+
+#### Login Issues
+
+1. Ensure you're using the correct credentials
+2. Check if the database is properly initialized
+3. Run the fix-database script:
+   ```
+   ./fix-database.sh
+   ```
+
+#### Database Connection Issues
+
+1. Check if the MongoDB container is running:
+   ```
+   docker-compose ps
+   ```
+2. Ensure the database credentials in the `.env` file match those in the application
+
+### Restarting the Application
+
+If you encounter issues, try restarting the application:
+
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+## Backup & Restore
 
 ### Backup Script Overview
 
@@ -211,13 +316,13 @@ We include an automated script (`backup_to_github.sh`) that runs `mongodump` ins
 #### How to Use the Backup Script:
 
 1.  Make the script executable:
-    
+
         chmod +x backup_to_github.sh
-    
+
 2.  Run the script:
-    
+
         ./backup_to_github.sh
-    
+
 
 ### Restoring Backups
 
@@ -225,7 +330,7 @@ We include an automated script (`backup_to_github.sh`) that runs `mongodump` ins
 *   If necessary, run `mongorestore` (or a provided script) to restore the database from the backup.
 
 *    TODO:
-*        I will bind the docker `mongodb` image to a volume with backup data stored in this github repo for percistant data flow. 
+*        I will bind the docker `mongodb` image to a volume with backup data stored in this github repo for percistant data flow.
 
 Project Structure
 -----------------
@@ -246,7 +351,7 @@ Project Structure
     ├── backup_to_github.sh       # Database backup automation script
     └── README.md                 # This file
 
-Snippet into Docker Compose 
+Snippet into Docker Compose
 ---------------------------
 
 ### 4\. Docker Compose Setup for MongoDB with Replica Set
@@ -278,7 +383,7 @@ Snippet from `docker-compose.yml`:
           - database-v:/data/db
           - ./database/sslkey/security.keyFile:/etc/secrets/security.keyFile:rw
         command: [ "mongod", "--replSet", "rs0", "--auth", "--keyFile", "/etc/secrets/security.keyFile" ]
-    
+
 
 After starting the container, connect to MongoDB and run the replica set initiation command (see RUNNING THE APPLICATION SECTION).
 
@@ -308,11 +413,20 @@ Now, let's examine what makes our Docker environment function. Everything is def
 You can use a separate override file (e.g., `docker-compose.override.yml`) to differentiate between production and development setups.
 
 
-How It All Works
-----------------
+## Support
+
+For additional support:
+
+- Check the documentation in the `docs` folder
+- Contact system administrator
+- Email support at: support@paalmonitoring.com
+
+## Developer Documentation
+
+### How It All Works
 
 *   **Docker & Environment Variables:** Docker Compose automatically loads your `.env` file to replace placeholders in the configuration. This ensures consistency across environments and levels of production. Simply by changing our env variables, we can have a production build in less than a week. This also makes it easy to adjust credentials, ports, and other settings.
 *   **MongoDB Replica Set:** MongoDB is configured to run as a replica set even if it's a single node. A key file is mounted for secure inter-node authentication, and the container automatically creates a root user based on your `.env` variables. After container startup, you manually initiate the replica set using `rs.initiate()`.
 *   **Development Workflow:** The frontend service is set up for development with live reloading by mounting your source code directory. The backend service connects to MongoDB using a connection string that includes the replica set and authentication parameters.
 *   **Backup and Restore:** The backup script leverages MongoDB’s `mongodump` and `mongorestore` commands to maintain a consistent dataset across local machines, ensuring every developer works with the same data.
-*   **Version Control:** Always commit your changes to your local development branch (`localDev`) and avoid pushing directly to `main` or the default 
+*   **Version Control:** Always commit your changes to your local development branch (`localDev`) and avoid pushing directly to `main` or the default

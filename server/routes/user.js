@@ -6,8 +6,7 @@ const mongoose = require('mongoose');
 const rateLimit = require('express-rate-limit');
 
 // Auth middleware
-const authMiddleware = require('../middleware/auth');
-const roleMiddleware = require('../middleware/role');
+const { authenticateJWT, isAdmin } = require('../middleware/authMiddleware');
 
 // Rate limiter
 const limiter = rateLimit({
@@ -19,7 +18,7 @@ const limiter = rateLimit({
 router.use(limiter);
 
 // Get all users (admin only)
-router.get('/', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+router.get('/', authenticateJWT, isAdmin, async (req, res) => {
   try {
     const users = await User.find({})
       .select('-__v')
@@ -34,7 +33,7 @@ router.get('/', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
 });
 
 // Get current user
-router.get('/me', authMiddleware, async (req, res) => {
+router.get('/me', authenticateJWT, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
       .select('-password -__v')
@@ -52,7 +51,7 @@ router.get('/me', authMiddleware, async (req, res) => {
 });
 
 // Get single user by ID (admin only)
-router.get('/:id', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+router.get('/:id', authenticateJWT, isAdmin, async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .select('-__v')
@@ -70,7 +69,7 @@ router.get('/:id', authMiddleware, roleMiddleware(['admin']), async (req, res) =
 });
 
 // Create new user (admin only)
-router.post('/', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+router.post('/', authenticateJWT, isAdmin, async (req, res) => {
   try {
     const { email, password, firstName, lastName, role, assignedFarm } = req.body;
 
@@ -118,7 +117,7 @@ router.post('/', authMiddleware, roleMiddleware(['admin']), async (req, res) => 
 });
 
 // Update user (admin only, or user updating their own profile)
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authenticateJWT, async (req, res) => {
   try {
     const { id } = req.params;
     const { firstName, lastName, role, assignedFarm, isActive, password } = req.body;
@@ -178,7 +177,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 });
 
 // Delete user (admin only)
-router.delete('/:id', authMiddleware, roleMiddleware(['admin']), async (req, res) => {
+router.delete('/:id', authenticateJWT, isAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 

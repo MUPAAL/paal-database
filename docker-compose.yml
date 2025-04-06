@@ -81,6 +81,9 @@ services:
     ports:
       - "3000:3000"
     env_file: .env
+    environment:
+      - PORT=3000
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
     volumes:
       - ./src:/usr/src/app/src
       - ./public:/usr/src/app/public

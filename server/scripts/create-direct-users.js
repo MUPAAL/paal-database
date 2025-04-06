@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 // Note: Not using bcrypt for seeding to avoid dependency issues
 
 // Connection details
@@ -50,27 +50,31 @@ async function createDirectUsers() {
 
     console.log('Using plain text passwords for seeding');
 
-    // Create test users
+    // Create test users with specific IDs
     const users = [
       {
+        _id: new ObjectId('67f1cac0399bf2dda1ea08a8'),
         email: 'admin@test.com',
-        password: adminPassword, // Hashed password
+        password: adminPassword, // Plain text password for seeding
         firstName: 'Admin',
         lastName: 'User',
         role: 'admin',
         isActive: true,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        lastLogin: new Date()
       },
       {
+        _id: new ObjectId('67f1cac0399bf2dda1ea08a9'),
         email: 'farmer@test.com',
-        password: farmerPassword, // Hashed password
+        password: farmerPassword, // Plain text password for seeding
         firstName: 'Farmer',
         lastName: 'User',
         role: 'farmer',
         isActive: true,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        lastLogin: new Date()
       }
     ];
 
@@ -79,16 +83,28 @@ async function createDirectUsers() {
       const existingUser = await usersCollection.findOne({ email: userData.email });
 
       if (existingUser) {
-        console.log(`User ${userData.email} already exists, updating...`);
-        await usersCollection.updateOne(
-          { email: userData.email },
-          { $set: { ...userData, updatedAt: new Date() } }
-        );
-        console.log(`Updated user ${userData.email}`);
+        console.log(`User ${userData.email} already exists with ID: ${existingUser._id}`);
+        console.log(`Desired ID: ${userData._id}`);
+
+        if (existingUser._id.toString() !== userData._id.toString()) {
+          console.log(`⚠️ IDs don't match. Deleting existing user and creating new one with correct ID...`);
+          await usersCollection.deleteOne({ email: userData.email });
+          await usersCollection.insertOne(userData);
+          console.log(`✅ User ${userData.email} recreated with correct ID`);
+        } else {
+          console.log(`✅ User ${userData.email} already has the correct ID`);
+          // Update other fields except _id
+          const { _id, ...updateData } = userData;
+          await usersCollection.updateOne(
+            { email: userData.email },
+            { $set: { ...updateData, updatedAt: new Date() } }
+          );
+          console.log(`✅ User ${userData.email} updated`);
+        }
       } else {
         console.log(`Creating user ${userData.email}...`);
         await usersCollection.insertOne(userData);
-        console.log(`Created user ${userData.email}`);
+        console.log(`✅ User ${userData.email} created`);
       }
     }
 

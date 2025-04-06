@@ -1,7 +1,6 @@
 import { AuthProvider } from "@/components/AuthProvider";
-import { SidebarProvider, SidebarTrigger } from "@/components/Sidebar";
-import { Breadcrumbs } from "@/components/ui/navigation/Breadcrumbs";
-import { AppSidebar } from "@/components/ui/navigation/Sidebar";
+import { ConditionalLayout } from "@/components/ConditionalLayout";
+import { SidebarProvider } from "@/components/Sidebar";
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import localFont from "next/font/local";
@@ -72,21 +71,10 @@ export default async function RootLayout({
           >
 
             <AuthProvider>
-              <SidebarProvider defaultOpen={defaultOpen} >
-                <AppSidebar className="relative" />
-                <div className="w-full">
-                  <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-950">                  <div className="flex items-center gap-2">
-                    <SidebarTrigger className="-ml-1 " />
-                    <div className="mr-2 h-4 w-px bg-gray-200 dark:bg-gray-800" />
-                    <Breadcrumbs />
-
-                  </div>
-                  </header>
-                  <div className="mx-auto max-w-screen-2xl relative">
-
-                    <main >{children}</main>
-                  </div>
-                </div>
+              <SidebarProvider defaultOpen={defaultOpen}>
+                <ConditionalLayout defaultSidebarOpen={defaultOpen}>
+                  {children}
+                </ConditionalLayout>
               </SidebarProvider>
             </AuthProvider>
           </ThemeProvider>

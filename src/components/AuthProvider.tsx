@@ -40,22 +40,83 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Helper function to get cookie value
+  const getCookie = (name: string): string | null => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+    return null;
+  };
+
   // Check if user is logged in
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("token");
-      const userData = localStorage.getItem("user");
+    const checkAuth = async () => {
+      setIsLoading(true);
+
+      // Check localStorage first
+      let token = localStorage.getItem("token");
+      let userData = localStorage.getItem("user");
+
+      // If token is not in localStorage, check cookies
+      if (!token) {
+        token = getCookie("token");
+        console.log('Token from cookie:', token ? 'Found' : 'Not found');
+
+        // If token is in cookie but not in localStorage, store it in localStorage
+        if (token && !localStorage.getItem("token")) {
+          localStorage.setItem("token", token);
+          console.log('Stored token from cookie to localStorage');
+        }
+      }
 
       if (token && userData) {
         try {
           console.log('Found existing user data in localStorage');
           const parsedUser = JSON.parse(userData);
           console.log('Parsed user data:', parsedUser);
+
+          // For client-side, we'll just use the parsed user data directly
+          // This avoids making API calls that might fail in server environments
+          console.log('Using parsed user data from localStorage');
           setUser(parsedUser);
+
+          // Optionally, we can validate the token on the client side
+          // but only for additional security, not as a requirement
+          try {
+            console.log('Validating token in background...');
+            fetch('/api/auth/validate', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ token }),
+            }).then(response => {
+              if (response.ok) {
+                return response.json();
+              } else {
+                throw new Error('Token validation failed');
+              }
+            }).then(data => {
+              console.log('Token validated successfully');
+              // Update user data if needed
+              if (JSON.stringify(data.user) !== JSON.stringify(parsedUser)) {
+                console.log('Updating user data from validation');
+                setUser(data.user);
+                localStorage.setItem('user', JSON.stringify(data.user));
+              }
+            }).catch(error => {
+              console.warn('Background token validation failed:', error);
+              // We don't log out the user here, just log a warning
+            });
+          } catch (validationError) {
+            console.warn('Error setting up token validation:', validationError);
+            // Continue using the parsed user data
+          }
         } catch (error) {
-          console.error("Error parsing user data:", error);
+          console.error("Error validating token:", error);
           localStorage.removeItem("token");
           localStorage.removeItem("user");
+          setUser(null);
         }
       } else {
         console.log('No user data found in localStorage');
@@ -67,6 +128,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
+  // Handle errors from async function
+  const handleAsyncError = (error: any) => {
+    console.error("Async error:", error);
+  };
+
   // Redirect based on auth status and role
   useEffect(() => {
     if (isLoading) return;
@@ -75,19 +141,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const adminRoutes = ["/admin"];
 
     // If not logged in and trying to access protected route
-    if (!user && !publicRoutes.includes(pathname)) {
+    if (!user && !publicRoutes.includes(pathname) && !pathname.startsWith('/api/')) {
+      console.log('Not logged in and trying to access protected route:', pathname);
       router.push("/login");
       return;
     }
 
     // If logged in and trying to access login page
     if (user && publicRoutes.includes(pathname)) {
+      console.log('Logged in and trying to access login page, redirecting to overview');
       router.push("/overview");
       return;
     }
 
     // If farmer trying to access admin routes
     if (user && user.role === "farmer" && adminRoutes.some(route => pathname.startsWith(route))) {
+      console.log('Farmer trying to access admin routes, redirecting to overview');
       router.push("/overview");
       return;
     }
@@ -109,18 +178,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log('Login response:', response.data);
 
-      // Store token and user data
+      // Store token and user data in localStorage
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
+      // Also store token in cookies for server-side middleware
+      // Use a simpler cookie format to ensure compatibility
+      document.cookie = `token=${response.data.token}; path=/; max-age=86400`;
+      console.log('Set token cookie directly:', `token=${response.data.token.substring(0, 20)}...`);
+
+      // Also use the API to set the cookie (more reliable for Next.js)
+      try {
+        const cookieResponse = await fetch('/api/auth/set-cookie', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token: response.data.token }),
+        });
+
+        if (cookieResponse.ok) {
+          console.log('Set token cookie via API successfully');
+        } else {
+          console.warn('Failed to set token cookie via API');
+        }
+      } catch (cookieError) {
+        console.error('Error setting token cookie via API:', cookieError);
+      }
+
       setUser(response.data.user);
 
-      // Redirect based on role
-      if (response.data.user.role === "admin") {
-        router.push("/admin");
-      } else {
-        router.push("/overview");
-      }
+      // Add a small delay before redirecting to ensure state is updated
+      setTimeout(() => {
+        // Redirect based on role
+        if (response.data.user.role === "admin") {
+          console.log('Redirecting admin to /admin');
+          router.push("/admin");
+        } else {
+          console.log('Redirecting farmer to /overview');
+          router.push("/overview");
+        }
+      }, 100);
     } catch (error: any) {
       console.error('Login error:', error);
       throw new Error(error.response?.data?.error || error.message || "Login failed");
@@ -128,9 +226,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Clear localStorage
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
+    // Clear cookie
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    console.log('Cleared token cookie');
+
+    // Update state
     setUser(null);
+
+    // Redirect to login
     router.push("/login");
   };
 
