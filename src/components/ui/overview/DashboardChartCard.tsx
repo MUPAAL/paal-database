@@ -71,8 +71,19 @@ export const ChartCard = React.memo(function ChartCard({
     return lastEntry[defaultCategory as keyof ChartDataPoint] || 0;
   }, [filteredData, categories]);
 
-  // If no data, display a placeholder
-  if (!filteredData || filteredData.length === 0) {
+  // Check if data is empty or if all values are zero
+  const isDataEmpty = !filteredData || filteredData.length === 0;
+
+  // Check if all data points have zero values for all categories
+  const hasAllZeroValues = filteredData && filteredData.length > 0 &&
+    filteredData.every(dataPoint =>
+      categories.every(category =>
+        !dataPoint[category] || dataPoint[category] === 0
+      )
+    );
+
+  // If no data or all zero values, display a placeholder
+  if (isDataEmpty || hasAllZeroValues) {
     return (
       <div className={cx("transition hover:opacity-80 bg-gray-50 dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800")}>
         <div className="flex items-center justify-between gap-x-2">
@@ -89,12 +100,15 @@ export const ChartCard = React.memo(function ChartCard({
         </div>
         <div className="flex h-64 items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-500 mb-2">No monitoring data available</p>
+            <p className="text-gray-500 mb-2">No graph data available</p>
             <p className="text-xs text-gray-400">
-              {title === "Total Pigs" ? "Add pigs to see metrics" :
-                title === "Heat Status" ? "Add pigs with heat data to see metrics" :
-                  title === "Fertility Status" ? "Add pigs with fertility data to see metrics" :
-                    "Add data to see metrics"}
+              {title === "Total Pigs" ? "Add pigs to see graph data" :
+                title === "Heat Status" ? "Add pigs with heat status data to see graph" :
+                  title === "Fertility Status" ? "Add pigs with fertility data to see graph" :
+                    "Add data to see graph metrics"}
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              {hasAllZeroValues ? "All values are currently zero" : "No data points found for the selected period"}
             </p>
           </div>
         </div>
