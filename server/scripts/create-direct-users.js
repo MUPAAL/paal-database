@@ -12,8 +12,8 @@ const DATABASE_PASSWORD = process.env.MONGO_INITDB_ROOT_PASSWORD || 'PAAL';
 // Try different connection strings
 let URI = `mongodb://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@mongo:${DATABASE_PORT}/${DATABASE_DB}?authSource=admin`;
 
-// Log connection details
-console.log('Attempting to connect with URI:', URI.replace(/:([^:@]+)@/, ':****@'));
+// Log non-sensitive connection details
+console.log('Attempting to connect to MongoDB with the following details:');
 console.log('DATABASE_HOST:', DATABASE_HOST);
 console.log('DATABASE_PORT:', DATABASE_PORT);
 console.log('DATABASE_DB:', DATABASE_DB);
@@ -31,9 +31,9 @@ async function createDirectUsers() {
       console.error('First connection attempt failed:', connectionError.message);
 
       // Try alternative connection string
-      console.log('Trying alternative connection string...');
+      console.log('Trying alternative connection details...');
       URI = `mongodb://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}?authSource=admin`;
-      console.log('Alternative URI:', URI.replace(/:([^:@]+)@/, ':****@'));
+      // Do not log the alternative URI to avoid exposing sensitive information
 
       client = new MongoClient(URI);
       await client.connect();
