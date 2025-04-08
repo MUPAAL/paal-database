@@ -1,14 +1,19 @@
 "use client"
 
 import { Badge } from "@/components/Badge"
-// import { Card } from "@/components/Card"
-//import { LineChart } from "@/components/LineChart"
+import { Button } from "@/components/Button"
+import { Card } from "@/components/Card"
+import { ProgressBar } from "@/components/ProgressBar"
+import { ProgressCircle } from "@/components/ProgressCircle_S"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/Tabs"
+import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import api from "@/lib/axios"
-import { useParams } from "next/navigation"
+import { Activity, ArrowLeft, Calendar, Clock, Heart, Info, Scale, Thermometer } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import Header from "./_components/Header"
-import Header2 from "./_components/Header2"
+import { AddHealthRecordDrawer } from "./_components/AddHealthRecordDrawer"
+import { EditPigDrawer } from "./_components/EditPigDrawer"
+import { FilterDate } from "./_components/FilterDate"
 import { LineChart } from "./_components/LineChart"
 import { TransactionChart } from "./_components/TransactionChart"
 
@@ -28,7 +33,6 @@ interface PigData {
   __v: number; // Version key, can be omitted in some cases
 }
 
-
 interface BCSData {
   _id: string;  // The MongoDB ObjectId as a string
   pigId: number;  // Numeric pig ID
@@ -47,171 +51,806 @@ interface PostureData {
 
 export default function PigDashboard() {
   const params = useParams()
+  const router = useRouter()
   const [pig, setPig] = useState<PigData | null>(null)
+  // We still need to fetch BCS and posture data for other tabs
   const [bcsHistory, setBcsHistory] = useState<BCSData[]>([])
   const [postureHistory, setPostureHistory] = useState<PostureData[]>([])
+  const [healthHistory, setHealthHistory] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState("overview")
 
+  // State for action buttons
+  const [editPigOpen, setEditPigOpen] = useState(false)
+  const [addHealthRecordOpen, setAddHealthRecordOpen] = useState(false)
 
-  useEffect(() => {
-    const fetchPigData = async () => {
+  // Function to fetch pig data
+  const fetchPigData = async () => {
+    try {
+      setIsLoading(true)
+
+      // First get the pig data to get the numeric pigId
+      const pigResponse = await api.get(`/pigs/${params.id}`)
+      setPig(pigResponse.data)
+
+      // Use the numeric pigId for subsequent requests
+      const numericPigId = pigResponse.data.pigId
+
       try {
-        const [pigResponse, bcsResponse, postureResponse] = await Promise.all([
-          api.get(`/pigs/${params.id}`),
-          api.get(`/pigs/${params.id}/bcs`),
-          api.get(`/pigs/${params.id}/posture`)
+        // Fetch BCS and posture data
+        const [bcsResponse, postureResponse] = await Promise.all([
+          api.get(`/pigs/${numericPigId}/bcs`),
+          api.get(`/pigs/${numericPigId}/posture`)
         ])
 
-        setPig(pigResponse.data)
         setBcsHistory(bcsResponse.data)
         setPostureHistory(postureResponse.data)
-      } catch (error) {
-        console.error('Error fetching pig data:', error)
-        setError('Failed to fetch pig data')
-      } finally {
-        setIsLoading(false)
+      } catch (dataError) {
+        console.error('Error fetching BCS or posture data:', dataError)
+        // Continue execution even if these fail
       }
+
+      // Fetch health history separately with better error handling
+      try {
+        // Try with numeric ID first
+        const healthHistoryResponse = await api.get(`/pigs/${numericPigId}/health-status`)
+        setHealthHistory(healthHistoryResponse.data || [])
+      } catch (healthError) {
+        console.error('Error fetching health status data with numeric ID:', healthError)
+
+        try {
+          // If that fails, try with the original ID parameter
+          const healthHistoryResponse = await api.get(`/pigs/${params.id}/health-status`)
+          setHealthHistory(healthHistoryResponse.data || [])
+        } catch (fallbackError) {
+          console.error('Error fetching health status data with original ID:', fallbackError)
+          // Set empty array if both attempts fail
+          setHealthHistory([])
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching pig data:', error)
+      setError('Failed to fetch pig data')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Function to handle printing report
+  const handlePrintReport = () => {
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) {
+      alert('Please allow pop-ups to print the report')
+      return
     }
 
+    // Generate report content
+    const reportContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Pig #${pig?.pigId} Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { color: #333; }
+          .section { margin-bottom: 20px; }
+          .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+          .info-item { margin-bottom: 10px; }
+          .label { font-weight: bold; color: #555; }
+          .value { font-size: 16px; }
+          .header { display: flex; justify-content: space-between; align-items: center; }
+          .date { color: #777; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Pig #${pig?.pigId} Report</h1>
+          <div class="date">Generated: ${new Date().toLocaleString()}</div>
+        </div>
+
+        <div class="section">
+          <h2>Basic Information</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">ID</div>
+              <div class="value">${pig?.pigId}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Tag</div>
+              <div class="value">${pig?.tag}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Breed</div>
+              <div class="value">${pig?.breed}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Age</div>
+              <div class="value">${pig?.age} months</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Status</div>
+              <div class="value">${pig?.active ? 'Active' : 'Inactive'}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Added Date</div>
+              <div class="value">${new Date(pig?.lastUpdate || '').toLocaleDateString()}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Location</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="label">Barn</div>
+              <div class="value">${getBarnName(pig?.currentLocation.barnId || '')}</div>
+            </div>
+            <div class="info-item">
+              <div class="label">Stall</div>
+              <div class="value">${getStallName(pig?.currentLocation.stallId || '')}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Health Status</h2>
+          <div class="info-item">
+            <div class="label">Overall Health</div>
+            <div class="value">${getHealthStatus(pig?.age || 0).label}</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Notes</h2>
+          <p>This report was generated automatically from the Pig Management System.</p>
+        </div>
+      </body>
+      </html>
+    `
+
+    // Write content to the new window and print
+    printWindow.document.open()
+    printWindow.document.write(reportContent)
+    printWindow.document.close()
+
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      printWindow.print()
+    }
+  }
+
+  // Fetch data when the component mounts or the ID changes
+  useEffect(() => {
     if (params.id) {
       fetchPigData()
     }
-  }, [params.id])
+  }, [params.id]) // fetchPigData is defined inside the component, so it's stable
 
   if (isLoading) {
-    return (<div className="flex items-center justify-center p-8">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
-    </div>)
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    )
   }
 
   if (error) {
-    return <div className="text-red-600">{error}</div>
+    return (
+      <Card className="mx-auto max-w-md mt-8">
+        <CardHeader>
+          <CardTitle className="text-red-600">Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>{error}</p>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </CardFooter>
+      </Card>
+    )
   }
 
   if (!pig) {
-    return <div>Pig not found</div>
+    return (
+      <Card className="mx-auto max-w-md mt-8">
+        <CardHeader>
+          <CardTitle>Pig Not Found</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>The requested pig could not be found.</p>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </CardFooter>
+      </Card>
+    )
   }
 
-  const getBCSStatusBadge = (score: number) => {
-    if (score >= 4) return <Badge variant="error">Critical</Badge>
-    if (score >= 3) return <Badge variant="success">Healthy</Badge>
-    return <Badge variant="warning">Attention Needed</Badge>
+  // Helper function to determine health status
+  const getHealthStatus = (score: number) => {
+    if (score >= 4) return { label: "Critical", variant: "error" }
+    if (score >= 3) return { label: "Healthy", variant: "success" }
+    return { label: "Attention Needed", variant: "warning" }
+  }
+
+  // Helper functions to convert IDs to readable names
+  const getBarnName = (barnId: string) => {
+    // Map of barn IDs to names
+    const barnNames: Record<string, string> = {
+      '1': 'North Barn',
+      '2': 'South Barn',
+      '3': 'East Barn',
+      '4': 'West Barn',
+      // Add more mappings as needed
+    }
+
+    return barnNames[barnId] || `Barn ${barnId}`
+  }
+
+  const getStallName = (stallId: string) => {
+    // Map of stall IDs to names
+    const stallNames: Record<string, string> = {
+      '1': 'Stall A',
+      '2': 'Stall B',
+      '3': 'Stall C',
+      '4': 'Stall D',
+      // Add more mappings as needed
+    }
+
+    return stallNames[stallId] || `Stall ${stallId}`
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-50">
-            Pig {pig.pigId}
-          </h1>
-          <p className="text-sm text-gray-500">
-            Group {pig.currentLocation.stallId} • {pig.breed}
-          </p>
+      {/* Header with back button and actions */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="light" onClick={() => router.back()} className="p-2">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
+              Pig #{pig.pigId}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Tag: {pig.tag} • Breed: {pig.breed}
+            </p>
+          </div>
         </div>
-        {getBCSStatusBadge(pig.age)}
+        <div className="flex items-center gap-3">
+          <FilterDate />
+          <Button>Export Data</Button>
+        </div>
+      </div>
+
+      {/* Health Metrics Cards - Tremor Style */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Body Condition Score</h3>
+              <Badge variant="success" className="text-xs">Healthy</Badge>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">3.5</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Optimal range: 2.5-3.5</p>
+              </div>
+              <div>
+                <ProgressCircle
+                  value={85}
+                  variant="success"
+                  radius={32}
+                  strokeWidth={6}
+                  showAnimation
+                >
+                  <span className="text-sm font-medium">85%</span>
+                </ProgressCircle>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>0</span>
+                <span>2.5</span>
+                <span>3.5</span>
+                <span>5</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+                <div className="h-2 rounded-full bg-emerald-500" style={{ width: '85%' }}></div>
+              </div>
+              <div className="mt-1 flex justify-between text-xs text-gray-500">
+                <span>Underweight</span>
+                <span>Ideal</span>
+                <span>Overweight</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Activity Level</h3>
+              <Badge variant="default" className="text-xs">Normal</Badge>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">4.2 hrs</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Daily movement</p>
+              </div>
+              <div>
+                <ProgressCircle
+                  value={70}
+                  variant="default"
+                  radius={32}
+                  strokeWidth={6}
+                  showAnimation
+                >
+                  <span className="text-sm font-medium">70%</span>
+                </ProgressCircle>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center gap-2">
+                <div className="h-10 w-10 rounded-full bg-blue-100 p-2 dark:bg-blue-900/20">
+                  <Activity className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Active time</p>
+                  <p className="text-xs text-gray-500">Above average for this breed</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Feeding Pattern</h3>
+              <Badge variant="warning" className="text-xs">Monitor</Badge>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-50">3.8 kg</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Daily consumption</p>
+              </div>
+              <div>
+                <ProgressCircle
+                  value={65}
+                  variant="warning"
+                  radius={32}
+                  strokeWidth={6}
+                  showAnimation
+                >
+                  <span className="text-sm font-medium">65%</span>
+                </ProgressCircle>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center gap-2">
+                <div className="h-10 w-10 rounded-full bg-amber-100 p-2 dark:bg-amber-900/20">
+                  <Scale className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Slight decrease noted</p>
+                  <p className="text-xs text-gray-500">-8% from last week</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
 
 
+      {/* Main content tabs */}
+      <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="health">Health Metrics</TabsTrigger>
+          <TabsTrigger value="posture">Posture Analysis</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
 
-      <section className="my-8">
-        <div className="space-y-12">
-          <Header />
-          {/* Daily Integer Value Distribution Chart */}
-          <TransactionChart
-            yAxisWidth={70}
-            type="amount"
-            className="hidden sm:block"
-            showPercentage={true}
-          />
-          {/* optimized for mobile view */}
-          <TransactionChart
-            showYAxis={false}
-            type="amount"
-            className="sm:hidden"
-            showPercentage={true}
-          />
-          {/* 
-<LineChart
-          className="mt-6 h-32"
-          data={chartData || []}
-          index="formattedDate"
-          colors={["indigo", "gray"]}
-          startEndOnly={true}
-          valueFormatter={(value) => formatter(value as number)}
-          showYAxis={false}
-          showLegend={false}
-          categories={categories}
-          showTooltip={isThumbnail ? false : true}
-          autoMinValue
-        />
-      </div> */}
-          <Header2 />
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          {/* Health Metrics Cards - Tremor Style */}
 
-          {/* Line Charts with Tabs */}
-          <div className="space-y-4">
-            <Tabs defaultValue="bcs">
-              <TabsList>
-                <TabsTrigger value="bcs">LineChart Overview</TabsTrigger>
-                <TabsTrigger value="vulva">BarChart Overview</TabsTrigger>
-                <TabsTrigger value="breathing">Breathing Rate</TabsTrigger>
-              </TabsList>
-              <TabsContent value="bcs">
-                <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20 my-10">
 
-                  <LineChart
-                    yAxisWidth={70}
-                    type="bcs"
-                    className="hidden sm:block"
-                  />
-                  <LineChart showYAxis={false} type="bcs" className="sm:hidden" />
-                  <LineChart
-                    yAxisWidth={70}
-                    type="vulva"
-                    className="hidden sm:block"
-                  />
-                  <LineChart
-                    showYAxis={false}
-                    type="vulva"
-                    className="sm:hidden"
-                  />
-                  <LineChart
-                    yAxisWidth={70}
-                    type="breathing"
-                    className="hidden sm:block"
-                  />
-                  <LineChart
-                    showYAxis={false}
-                    type="breathing"
-                    className="sm:hidden"
-                  />
+          {/* Removed charts section as requested */}
+
+          {/* Pig Information and Health Status */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-10 w-10 rounded-full bg-blue-100 p-2 dark:bg-blue-900/20">
+                      <Info className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Pig Information</h2>
+                  </div>
+                  <Badge variant={pig.active ? 'success' : 'error'} className="text-xs">
+                    {pig.active ? 'Active' : 'Inactive'}
+                  </Badge>
                 </div>
-              </TabsContent>
-              <TabsContent value="vulva">
-                <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-20">
-                  <TransactionChart yAxisWidth={100} type="category" />
-                  {/* <TransactionChart yAxisWidth={100} type="merchant" /> */}
+
+                <div className="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">ID:</span>
+                      <span className="text-base font-semibold text-gray-900 dark:text-gray-50">#{pig.pigId}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Tag:</span>
+                      <span className="text-base font-semibold text-gray-900 dark:text-gray-50">{pig.tag}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Breed:</span>
+                      <span className="text-base font-semibold text-gray-900 dark:text-gray-50">{pig.breed}</span>
+                    </div>
+                  </div>
                 </div>
-              </TabsContent>
-              <TabsContent value="breathing">
+
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                  <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+                    <Clock className="h-6 w-6 text-gray-400 mb-2" />
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Age</h3>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-50">{pig.age}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">months</p>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+                    <Calendar className="h-6 w-6 text-gray-400 mb-2" />
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Added</h3>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-50">{new Date(pig.lastUpdate).toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">registration date</p>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+                    <div className="h-6 w-6 text-gray-400 mb-2 flex items-center justify-center">
+                      <span className="text-lg font-bold">🏠</span>
+                    </div>
+                    <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-50">Barn {pig.currentLocation.barnId}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Stall {pig.currentLocation.stallId}</p>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Additional Information</h3>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-purple-100 p-1.5 dark:bg-purple-900/20">
+                        <Heart className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Health Status</p>
+                        <p className="text-xs text-gray-500">Last check: {new Date().toLocaleDateString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-green-100 p-1.5 dark:bg-green-900/20">
+                        <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Activity Level</p>
+                        <p className="text-xs text-gray-500">Normal range</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-red-500" />
+                  Health Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Overall Health</span>
+                    <span className="text-gray-900 dark:text-gray-100">85%</span>
+                  </div>
+                  <ProgressBar value={85} color="emerald" className="[&>*]:h-2" />
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Mobility</span>
+                    <span className="text-gray-900 dark:text-gray-100">90%</span>
+                  </div>
+                  <ProgressBar value={90} color="blue" className="[&>*]:h-2" />
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Appetite</span>
+                    <span className="text-gray-900 dark:text-gray-100">75%</span>
+                  </div>
+                  <ProgressBar value={75} color="amber" className="[&>*]:h-2" />
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">Respiratory</span>
+                    <span className="text-gray-900 dark:text-gray-100">95%</span>
+                  </div>
+                  <ProgressBar value={95} color="emerald" className="[&>*]:h-2" />
+                </div>
+
+                <div className="pt-2">
+                  <p className="text-sm text-gray-500">Last health check: {new Date().toLocaleDateString()}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Health Metrics Tab */}
+        <TabsContent value="health" className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Scale className="h-5 w-5" />
+                  Body Condition Score
+                </CardTitle>
+                <CardDescription>
+                  BCS trend over the selected time period
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <LineChart
+                  yAxisWidth={70}
+                  type="bcs"
+                  className="h-80"
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5" />
+                  Breathing Rate
+                </CardTitle>
+                <CardDescription>
+                  Breathing rate (breaths per minute) over time
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
                 <LineChart
                   yAxisWidth={70}
                   type="breathing"
-                  className="hidden sm:block"
+                  className="h-80"
                 />
-                <LineChart
-                  showYAxis={false}
-                  type="breathing"
-                  className="sm:hidden"
-                />
-              </TabsContent>
-            </Tabs>
+              </CardContent>
+            </Card>
           </div>
 
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Thermometer className="h-5 w-5" />
+                Vulva Swelling
+              </CardTitle>
+              <CardDescription>
+                Vulva swelling measurements over time
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <LineChart
+                yAxisWidth={70}
+                type="vulva"
+                className="h-80"
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-        </div>
-      </section>
+        {/* Posture Analysis Tab */}
+        <TabsContent value="posture" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Daily Posture Distribution
+              </CardTitle>
+              <CardDescription>
+                Distribution of posture values (1-5) recorded each day
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <TransactionChart
+                yAxisWidth={70}
+                type="amount"
+                className="h-96"
+                showPercentage={true}
+              />
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Posture by Category</CardTitle>
+                <CardDescription>
+                  Posture distribution by category
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <TransactionChart
+                  yAxisWidth={70}
+                  type="category"
+                  className="h-80"
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Posture Interpretation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="rounded-md bg-blue-50 p-4 dark:bg-blue-900/20">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default">Score 1</Badge>
+                      <h3 className="font-semibold">Lying flat on side</h3>
+                    </div>
+                    <p className="mt-2 text-sm">Pig is lying completely flat on its side, often in deep sleep.</p>
+                  </div>
+
+                  <div className="rounded-md bg-green-50 p-4 dark:bg-green-900/20">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="success">Score 2-3</Badge>
+                      <h3 className="font-semibold">Lying on sternum</h3>
+                    </div>
+                    <p className="mt-2 text-sm">Pig is lying on its sternum, a normal resting position.</p>
+                  </div>
+
+                  <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="warning">Score 4</Badge>
+                      <h3 className="font-semibold">Standing</h3>
+                    </div>
+                    <p className="mt-2 text-sm">Pig is standing on all four legs, alert and active.</p>
+                  </div>
+
+                  <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="error">Score 5</Badge>
+                      <h3 className="font-semibold">Abnormal posture</h3>
+                    </div>
+                    <p className="mt-2 text-sm">Pig is showing signs of discomfort or abnormal posture, may require attention.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* History Tab */}
+        <TabsContent value="history" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Activity Timeline</CardTitle>
+              <CardDescription>
+                Recent activity and events for this pig
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-8">
+                {/* Display actual health history data */}
+                {healthHistory && healthHistory.length > 0 ? (
+                  healthHistory.slice(0, 5).map((record, index) => {
+                    // Determine the color based on health status
+                    let statusColor = "bg-primary";
+                    if (record.status === "critical") statusColor = "bg-red-500";
+                    else if (record.status === "at risk") statusColor = "bg-yellow-500";
+                    else if (record.status === "healthy") statusColor = "bg-green-500";
+                    else if (record.status === "no movement") statusColor = "bg-gray-500";
+
+                    // Format the date
+                    const recordDate = new Date(record.timestamp);
+                    const dateString = recordDate.toLocaleDateString();
+                    const timeString = recordDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    // Format metrics if available
+                    const metricsText = [];
+                    if (record.metrics) {
+                      if (record.metrics.temperature) metricsText.push(`Temperature: ${record.metrics.temperature}°C`);
+                      if (record.metrics.respiratoryRate) metricsText.push(`Respiratory Rate: ${record.metrics.respiratoryRate} bpm`);
+                      if (record.metrics.weight) metricsText.push(`Weight: ${record.metrics.weight} kg`);
+                    }
+
+                    return (
+                      <div className="flex gap-4" key={record._id}>
+                        <div className="relative flex-none">
+                          {index < healthHistory.length - 1 && (
+                            <div className="absolute left-2.5 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-800"></div>
+                          )}
+                          <div className={`relative z-10 h-5 w-5 rounded-full ${statusColor}`}></div>
+                        </div>
+                        <div className="flex-1 pt-0.5">
+                          <p className="text-sm font-medium">
+                            Health Status: {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{dateString} at {timeString}</p>
+                          {metricsText.length > 0 && (
+                            <p className="mt-2 text-sm">{metricsText.join(' • ')}</p>
+                          )}
+                          <p className="mt-1 text-sm">{record.notes}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500">No health records found for this pig.</p>
+                    <Button
+                      variant="light"
+                      className="mt-2"
+                      onClick={() => setAddHealthRecordOpen(true)}
+                    >
+                      Add First Health Record
+                    </Button>
+                  </div>
+                )}
+
+                {/* System entry - always show */}
+                <div className="flex gap-4">
+                  <div className="relative flex-none">
+                    <div className="relative z-10 h-5 w-5 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+                  </div>
+                  <div className="flex-1 pt-0.5">
+                    <p className="text-sm font-medium">Added to system</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(pig.lastUpdate).toLocaleDateString()}</p>
+                    <p className="mt-2 text-sm">Pig #{pig.pigId} with tag {pig.tag} was added to the system</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Action buttons */}
+      <div className="flex flex-wrap gap-3 justify-end">
+        <Button variant="light" onClick={() => setEditPigOpen(true)}>Edit Pig</Button>
+        <Button variant="light" onClick={handlePrintReport}>Print Report</Button>
+        <Button onClick={() => setAddHealthRecordOpen(true)}>Add Health Record</Button>
+      </div>
+
+      {/* Edit Pig Drawer */}
+      <EditPigDrawer
+        open={editPigOpen}
+        onOpenChange={setEditPigOpen}
+        pigData={pig}
+        onSuccess={() => {
+          // Refresh pig data after successful edit
+          fetchPigData()
+        }}
+      />
+
+      {/* Add Health Record Drawer */}
+      <AddHealthRecordDrawer
+        open={addHealthRecordOpen}
+        onOpenChange={setAddHealthRecordOpen}
+        pigId={pig?.pigId}
+        onSuccess={() => {
+          // Refresh pig data after adding health record
+          fetchPigData()
+        }}
+      />
     </div>
   )
 }
