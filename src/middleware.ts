@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 // Define protected routes that require authentication
-const protectedRoutes = [
+const protectedRoutes: string[] = [
   '/admin',
   '/admin/dashboard',
   '/admin/farms',
@@ -70,6 +70,16 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   } else if (isProtectedRoute && token) {
     console.log('Middleware - Allowing access to protected route:', pathname);
+    // Add the token to the request headers for the backend
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('Authorization', `Bearer ${token}`);
+
+    // Return the request with the modified headers
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
   // If accessing a route that should redirect when authenticated (like login)
@@ -78,13 +88,11 @@ export function middleware(request: NextRequest) {
     pathname === route || pathname.startsWith(`${route}/`)
   );
 
-  if (shouldRedirectIfAuthenticated && token) {
-    // Get user from localStorage or cookies to determine role
-    // Since we can't access localStorage in middleware, we'll use a default redirect
-    console.log('Middleware - Redirecting from login to overview because user is authenticated');
-    return NextResponse.redirect(new URL('/overview', request.url));
-  } else if (shouldRedirectIfAuthenticated && !token) {
-    console.log('Middleware - Allowing access to login page because user is not authenticated');
+  // Disable middleware redirection for login page to avoid conflicts with client-side auth
+  // Let the client-side AuthProvider handle the redirection instead
+  if (shouldRedirectIfAuthenticated) {
+    console.log('Middleware - Allowing access to login page, client-side auth will handle redirection');
+    return NextResponse.next();
   }
 
   // For all other routes, proceed normally

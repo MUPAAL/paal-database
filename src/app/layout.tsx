@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/components/AuthProvider";
+import { ClientOnly } from "@/components/ClientOnly";
 import { ConditionalLayout } from "@/components/ConditionalLayout";
 import { SidebarProvider } from "@/components/Sidebar";
 import type { Metadata } from "next";
@@ -70,13 +71,15 @@ export default async function RootLayout({
             attribute="class"
           >
 
-            <AuthProvider>
-              <SidebarProvider defaultOpen={defaultOpen}>
-                <ConditionalLayout defaultSidebarOpen={defaultOpen}>
-                  {children}
-                </ConditionalLayout>
-              </SidebarProvider>
-            </AuthProvider>
+            <ClientOnly fallback={<div className="w-full">{children}</div>}>
+              <AuthProvider>
+                <SidebarProvider defaultOpen={defaultOpen}>
+                  <ConditionalLayout defaultSidebarOpen={defaultOpen}>
+                    {children}
+                  </ConditionalLayout>
+                </SidebarProvider>
+              </AuthProvider>
+            </ClientOnly>
           </ThemeProvider>
         </NuqsAdapter>
       </body>

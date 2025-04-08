@@ -90,19 +90,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({ token }),
+              cache: 'no-store'
             }).then(response => {
               if (response.ok) {
                 return response.json();
               } else {
-                throw new Error('Token validation failed');
+                console.warn('Token validation response not OK:', response.status, response.statusText);
+                // Don't throw an error, just return null to continue using the cached user data
+                return null;
               }
             }).then(data => {
-              console.log('Token validated successfully');
-              // Update user data if needed
-              if (JSON.stringify(data.user) !== JSON.stringify(parsedUser)) {
-                console.log('Updating user data from validation');
-                setUser(data.user);
-                localStorage.setItem('user', JSON.stringify(data.user));
+              if (data) {
+                console.log('Token validated successfully');
+                // Update user data if needed
+                if (JSON.stringify(data.user) !== JSON.stringify(parsedUser)) {
+                  console.log('Updating user data from validation');
+                  setUser(data.user);
+                  localStorage.setItem('user', JSON.stringify(data.user));
+                }
               }
             }).catch(error => {
               console.warn('Background token validation failed:', error);
@@ -137,25 +142,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
+    // Extract the base path without query parameters
+    const basePath = pathname.split('?')[0];
+    console.log('Current path:', pathname, 'Base path:', basePath);
+
+    // Check if there's a 'from' parameter in the URL
+    const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const fromPath = searchParams.get('from');
+    console.log('From path:', fromPath);
+
     const publicRoutes = ["/login"];
     const adminRoutes = ["/admin"];
 
     // If not logged in and trying to access protected route
-    if (!user && !publicRoutes.includes(pathname) && !pathname.startsWith('/api/')) {
-      console.log('Not logged in and trying to access protected route:', pathname);
+    if (!user && !publicRoutes.includes(basePath) && !basePath.startsWith('/api/')) {
+      console.log('Not logged in and trying to access protected route:', basePath);
       router.push("/login");
       return;
     }
 
     // If logged in and trying to access login page
-    if (user && publicRoutes.includes(pathname)) {
-      console.log('Logged in and trying to access login page, redirecting to overview');
-      router.push("/overview");
+    if (user && publicRoutes.includes(basePath)) {
+      console.log('Logged in and trying to access login page');
+      // If there's a 'from' parameter, redirect to that path
+      if (fromPath) {
+        console.log('Redirecting to:', fromPath);
+        router.push(fromPath);
+      } else {
+        // Otherwise, redirect to the default page based on role
+        const defaultPath = user.role === 'admin' ? '/admin' : '/overview';
+        console.log('Redirecting to default path:', defaultPath);
+        router.push(defaultPath);
+      }
       return;
     }
 
     // If farmer trying to access admin routes
-    if (user && user.role === "farmer" && adminRoutes.some(route => pathname.startsWith(route))) {
+    if (user && user.role === "farmer" && adminRoutes.some(route => basePath.startsWith(route))) {
       console.log('Farmer trying to access admin routes, redirecting to overview');
       router.push("/overview");
       return;

@@ -4,7 +4,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { SidebarTrigger } from "@/components/Sidebar";
 import { Breadcrumbs } from "@/components/ui/navigation/Breadcrumbs";
 import { AppSidebar } from "@/components/ui/navigation/Sidebar";
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 
 interface ConditionalLayoutProps {
   children: ReactNode;
@@ -13,23 +13,6 @@ interface ConditionalLayoutProps {
 
 export function ConditionalLayout({ children, defaultSidebarOpen }: ConditionalLayoutProps) {
   const { user, isLoading } = useAuth();
-  const [mounted, setMounted] = React.useState(false);
-
-  // Only show the layout after the component has mounted to avoid hydration errors
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // If not mounted yet, show a minimal layout
-  if (!mounted) {
-    return (
-      <div className="w-full">
-        <div className="mx-auto max-w-screen-2xl relative">
-          <main>{children}</main>
-        </div>
-      </div>
-    );
-  }
 
   // If loading, show a minimal layout
   if (isLoading) {

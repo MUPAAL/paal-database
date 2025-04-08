@@ -17,12 +17,16 @@ const nextConfig = {
       },
     ],
   },
-  // Add assetPrefix for production builds to ensure assets are loaded correctly
-  assetPrefix: process.env.NODE_ENV === 'production' ? 'http://localhost:8080' : undefined,
-  // Configure the server to listen on port 8080
+  // Don't use assetPrefix as it can cause issues with Nginx proxy
+  // assetPrefix: process.env.NODE_ENV === 'production' ? 'http://localhost:8080' : undefined,
+
+  // Configure the server
   serverRuntimeConfig: {
-    port: 8080,
+    port: process.env.PORT || 3000,
   },
+
+  // Enable output tracing for better debugging
+  output: 'standalone',
   // Add API proxy configuration
   async rewrites() {
     return [

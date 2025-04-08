@@ -6,6 +6,7 @@ import api from "@/utils/api";
 import { Building2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import CreateFarmModal from "./CreateFarmModal";
 import FarmDetailsModal from "./FarmDetailsModal";
 
 type FarmType = {
@@ -25,6 +26,7 @@ export default function FarmsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"view" | "edit">("view");
   const [selectedFarm, setSelectedFarm] = useState<FarmType | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const router = useRouter();
 
@@ -102,8 +104,21 @@ export default function FarmsPage() {
 
   // Handle create farm
   const handleCreateFarm = () => {
-    // Simple alert to test button functionality
-    alert("Creating new farm");
+    setIsCreateModalOpen(true);
+  };
+
+  // Refresh farms after creating a new one
+  const handleFarmCreated = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get("/api/farms");
+      setFarms(Array.isArray(response.data) ? response.data : []);
+    } catch (err: any) {
+      console.error("Error refreshing farms:", err);
+      setError(err.response?.data?.error || "Failed to refresh farms");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -215,6 +230,14 @@ export default function FarmsPage() {
         }}
         farm={selectedFarm}
         mode={modalMode}
+        onSuccess={handleFarmCreated}
+      />
+
+      {/* Create Farm Modal */}
+      <CreateFarmModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleFarmCreated}
       />
     </div>
   );

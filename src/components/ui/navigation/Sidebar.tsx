@@ -17,9 +17,9 @@ import {
   SidebarMenuSub,
   SidebarSubLink,
 } from "@/components/Sidebar"
-import { cx, focusRing } from "@/lib/utils"
+import { cx } from "@/lib/utils"
 import { RiArrowDownSFill } from "@remixicon/react"
-import { BookText, House, Link, PackageSearch, Settings } from "lucide-react"
+import { BookText, House, Link, Settings } from "lucide-react"
 import { usePathname } from "next/navigation"
 import * as React from "react"
 import { UserProfile } from "./UserProfile"
@@ -74,16 +74,22 @@ const navigation3 = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const { user } = useAuth()
-  
+  const [mounted, setMounted] = React.useState(false)
+
+  // Only run on client-side
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const [openMenus, setOpenMenus] = React.useState<string[]>([
     navigation2[0].name,
     navigation2[1]?.name,
   ])
-  
+
   const isActive = React.useCallback((itemHref: string): boolean => {
-    if (!itemHref) return false
+    if (!mounted || !itemHref) return false
     return pathname === itemHref || pathname.startsWith(`${itemHref}/`)
-  }, [pathname])
+  }, [pathname, mounted])
 
   const toggleMenu = React.useCallback((name: string) => {
     setOpenMenus((prev) => {
@@ -165,9 +171,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     onClick={
                       item.children
                         ? (e) => {
-                            e.preventDefault()
-                            toggleMenu(item.name)
-                          }
+                          e.preventDefault()
+                          toggleMenu(item.name)
+                        }
                         : undefined
                     }
                     suffix={

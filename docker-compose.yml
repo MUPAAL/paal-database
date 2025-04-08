@@ -84,6 +84,9 @@ services:
     environment:
       - PORT=3000
       - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - HOSTNAME=0.0.0.0 # Allow connections from any IP
+      - NODE_ENV=development # Ensure development mode
+      - NEXT_TELEMETRY_DISABLED=1 # Disable telemetry
     volumes:
       - ./src:/usr/src/app/src
       - ./public:/usr/src/app/public

@@ -1,9 +1,9 @@
 "use client";
 
-import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/Button_S";
 import { Input } from "@/components/Input";
 import { Label } from "@/components/Label";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const auth = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,14 +23,42 @@ export default function LoginPage() {
     try {
       console.log('Login form submitted with email:', email);
 
-      // Use the login function from AuthContext
-      await auth.login(email, password);
+      // Direct API call to login
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+        email,
+        password,
+      }, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      });
 
-      // The redirection will be handled by the AuthProvider
-      console.log('Login successful');
+      console.log('Login response:', response.data);
+
+      // Store token and user info in localStorage
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      // Also store token in cookies for server-side middleware
+      document.cookie = `token=${response.data.token}; path=/; max-age=86400`;
+
+      // Redirect based on role
+      console.log('Login successful, redirecting based on role:', response.data.user.role);
+
+      // Use window.location for a hard redirect instead of router.push
+      // This ensures a complete page reload with the new authentication state
+      if (response.data.user.role === "admin") {
+        console.log('Redirecting admin to /admin');
+        window.location.href = "/admin";
+      } else {
+        console.log('Redirecting farmer to /overview');
+        window.location.href = "/overview";
+      }
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err.message || "Failed to login");
+      setError(err.response?.data?.error || err.message || "Failed to login");
     } finally {
       setIsLoading(false);
     }

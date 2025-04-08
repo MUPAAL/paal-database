@@ -1,0 +1,93 @@
+{
+  "database": "paalab",
+  "createdAt": "2025-04-07T22:07:27.361Z",
+  "collections": {
+    "pigvulvaswellings": [],
+    "pigheatstatuses": [],
+    "stalls": [
+      {
+        "_id": "67f449a77a04310bede8b675",
+        "name": "BarnThree",
+        "barnId": "67f4499e7a04310bede8b655",
+        "farmId": "67f449727a04310bede8b4e1",
+        "createdAt": "2025-04-07T21:54:47.366Z",
+        "updatedAt": "2025-04-07T21:54:47.366Z",
+        "__v": 0
+      }
+    ],
+    "pigs": [
+      {
+        "_id": "67f449c97a04310bede8b7bf",
+        "pigId": 6969,
+        "tag": "PIG-6969",
+        "breed": "Lancaster",
+        "age": 12,
+        "currentLocation": {
+          "farmId": "67f449727a04310bede8b4e1",
+          "barnId": "67f4499e7a04310bede8b655",
+          "stallId": "67f449a77a04310bede8b675"
+        },
+        "active": true,
+        "createdAt": "2025-04-07T21:55:21.561Z",
+        "updatedAt": "2025-04-07T21:55:21.561Z",
+        "__v": 0
+      }
+    ],
+    "pigfertilities": [],
+    "pigbreathrates": [],
+    "farms": [
+      {
+        "_id": "67f449727a04310bede8b4e1",
+        "name": "ZhouFarm",
+        "location": "Mizzou",
+        "description": "The Barn at mizzou innovation ",
+        "isActive": true,
+        "createdAt": "2025-04-07T21:53:54.692Z",
+        "updatedAt": "2025-04-07T21:54:02.064Z",
+        "__v": 0
+      }
+    ],
+    "pighealthstatuses": [],
+    "users": [
+      {
+        "_id": "67f1cac0399bf2dda1ea08a8",
+        "email": "admin@test.com",
+        "password": "admin123",
+        "firstName": "Admin",
+        "lastName": "User",
+        "role": "admin",
+        "isActive": true,
+        "createdAt": "2025-04-07T21:40:08.991Z",
+        "updatedAt": "2025-04-07T21:57:44.176Z",
+        "lastLogin": "2025-04-07T21:57:44.173Z"
+      },
+      {
+        "_id": "67f1cac0399bf2dda1ea08a9",
+        "email": "farmer@test.com",
+        "password": "farmer123",
+        "firstName": "Farmer",
+        "lastName": "User",
+        "role": "farmer",
+        "isActive": true,
+        "createdAt": "2025-04-07T21:40:08.991Z",
+        "updatedAt": "2025-04-07T21:40:09.003Z",
+        "lastLogin": "2025-04-07T21:40:08.991Z"
+      }
+    ],
+    "barns": [
+      {
+        "_id": "67f4499e7a04310bede8b655",
+        "name": "BarnOne",
+        "farmId": "67f449727a04310bede8b4e1",
+        "createdAt": "2025-04-07T21:54:38.093Z",
+        "updatedAt": "2025-04-07T21:54:38.093Z",
+        "__v": 0
+      }
+    ],
+    "paalab": [],
+    "pigpostures": [],
+    "devices": [],
+    "temperaturedatas": [],
+    "pigbcs": []
+  }
+}
