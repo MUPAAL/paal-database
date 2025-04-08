@@ -24,7 +24,10 @@ export default function placeHolder() {
         if (!farmName) return;
         setLoading(true);
         try {
-            const res = await api.post("/farms", { name: farmName });
+            const res = await api.post("/farms", {
+                name: farmName,
+                location: "Default Location" // Add required location field
+            });
             setFarmId(res.data._id);
             setFarmName("");
             setStep("barn");

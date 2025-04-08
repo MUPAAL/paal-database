@@ -145,13 +145,14 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
             console.log(newFarmName);
             await api.post('/farms', {
                 name: newFarmName,
-                location: ""
+                location: "Default Location" // Provide a non-empty location value
             });
             setNewFarmName("");
             setIsAddingFarm(false);
             refreshData();
         } catch (error) {
             console.error("Error adding farm:", error);
+            toast.error("Failed to add farm. Make sure you provide a name and have admin permissions.");
         }
     };
 
@@ -168,6 +169,7 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
             refreshData();
         } catch (error) {
             console.error("Error adding barn:", error);
+            toast.error("Failed to add barn. Please try again.");
         }
     };
 
@@ -185,6 +187,7 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
             refreshData();
         } catch (error) {
             console.error("Error adding stall:", error);
+            toast.error("Failed to add stall. Please try again.");
         }
     };
 
