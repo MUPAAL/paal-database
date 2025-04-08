@@ -14,8 +14,9 @@ import { useEffect, useState } from "react"
 import { AddHealthRecordDrawer } from "./_components/AddHealthRecordDrawer"
 import { EditPigDrawer } from "./_components/EditPigDrawer"
 import { FilterDate } from "./_components/FilterDate"
-import { LineChart } from "./_components/LineChart"
-import { TransactionChart } from "./_components/TransactionChart"
+import { HealthMetricCard } from "./_components/HealthMetricCard"
+import { LineChart } from "./_components/LineChartReal"
+import { TransactionChart } from "./_components/TransactionChartReal"
 
 interface PigData {
   _id: string;  // The MongoDB ObjectId as a string
@@ -456,10 +457,73 @@ export default function PigDashboard() {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          {/* Health Metrics Cards - Tremor Style */}
+          {/* Health Metrics Cards - Real Data */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* BCS Card */}
+            <HealthMetricCard
+              title="Body Condition Score"
+              endpoint={`/pigs/${pig.pigId}/bcs/latest`}
+              icon={<Scale className="h-6 w-6" />}
+              optimalRange="2.5-3.5"
+              formatValue={(value) => value.toFixed(1)}
+              formatMetric={(data) => ({
+                value: data.score,
+                status: data.score >= 2.5 && data.score <= 3.5 ? "success" :
+                  data.score < 2.0 || data.score > 4.0 ? "error" : "warning",
+                label: data.score >= 2.5 && data.score <= 3.5 ? "Healthy" :
+                  data.score < 2.0 ? "Underweight" :
+                    data.score > 4.0 ? "Overweight" : "Borderline",
+                trend: "Stable condition",
+                trendDetail: "Based on recent measurements"
+              })}
+            />
 
+            {/* Breathing Rate Card */}
+            <HealthMetricCard
+              title="Breathing Rate"
+              endpoint={`/pigs/${pig.pigId}/breath-rate/latest`}
+              icon={<Heart className="h-6 w-6" />}
+              optimalRange="15-25 bpm"
+              formatValue={(value) => `${value} bpm`}
+              formatMetric={(data) => ({
+                value: data.rate,
+                status: data.rate >= 15 && data.rate <= 25 ? "success" :
+                  data.rate > 30 ? "error" : "warning",
+                label: data.rate >= 15 && data.rate <= 25 ? "Normal" :
+                  data.rate > 30 ? "Critical" : "Elevated",
+                trend: data.rate > 25 ? "Elevated breathing rate" : "Normal breathing rate",
+                trendDetail: "Monitor for changes"
+              })}
+            />
 
-          {/* Removed charts section as requested */}
+            {/* Posture Card */}
+            <HealthMetricCard
+              title="Posture Score"
+              endpoint={`/pigs/${pig.pigId}/posture/latest`}
+              icon={<Activity className="h-6 w-6" />}
+              optimalRange="Score 1-2 is optimal"
+              formatValue={(value) => value.toString()}
+              formatMetric={(data) => {
+                const postureLabels = {
+                  1: "Standing",
+                  2: "Lying",
+                  3: "Sitting",
+                  4: "Moving",
+                  5: "Other"
+                };
+                return {
+                  value: data.score,
+                  status: data.score <= 2 ? "success" :
+                    data.score >= 4 ? "warning" : "default",
+                  label: postureLabels[data.score as keyof typeof postureLabels] || "Unknown",
+                  trend: `Current posture: ${postureLabels[data.score as keyof typeof postureLabels] || "Unknown"}`,
+                  trendDetail: "Based on latest observation"
+                };
+              }}
+            />
+          </div>
+
+          {/* Charts with real data */}
 
           {/* Pig Information and Health Status */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
