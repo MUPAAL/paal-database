@@ -1,7 +1,6 @@
 import { cx } from "@/lib/utils";
 
 
-import { Card } from "@/components/Card";
 import { ProgressCircle } from "@/components/ProgressCircle_S";
 
 export type KpiEntry = {
@@ -32,15 +31,37 @@ export default function FertilityProgressCard({
   ctaLink,
   data,
 }: FertilityCardProps) {
-  // If no data, display a message
-  if (!data || data.length === 0) {
+  // Check if there are zero fertility metrics
+  const hasZeroFertilityMetrics = !data || data.length === 0 || data.every(item => item.current === 0);
+
+  // If no data or zero fertility metrics, display a placeholder
+  if (hasZeroFertilityMetrics) {
     return (
-      <Card className="p-4 sm:mx-auto sm:max-w-lg">
-        <h3 className="text-tremor-default font-medium text-tremor-content-strong dark:text-dark-tremor-content-strong">
-          {title}
-        </h3>
-        <p className="text-center text-gray-500 mt-6">No data available.</p>
-      </Card>
+      <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-2">
+          <h3 className="font-bold text-gray-900 sm:text-sm dark:text-gray-50">
+            {title}
+          </h3>
+        </div>
+        <div className="mt-2 flex items-baseline gap-2">
+          <span className="text-xl text-gray-900 dark:text-gray-50">
+            0
+          </span>
+          <span className="text-sm text-gray-500">{valueDescription}</span>
+        </div>
+        <div className="flex h-40 items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-500 mb-2">No fertility information available</p>
+            <p className="text-xs text-gray-400">Add pigs with fertility data to see metrics</p>
+          </div>
+        </div>
+        <p className="mt-4 text-xs text-gray-500">
+          {ctaDescription}{" "}
+          <a href={ctaLink} className="text-indigo-600 dark:text-indigo-400">
+            {ctaText}
+          </a>
+        </p>
+      </div>
     );
   }
 

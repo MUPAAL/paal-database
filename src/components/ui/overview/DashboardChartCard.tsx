@@ -71,6 +71,37 @@ export const ChartCard = React.memo(function ChartCard({
     return lastEntry[defaultCategory as keyof ChartDataPoint] || 0;
   }, [filteredData, categories]);
 
+  // If no data, display a placeholder
+  if (!filteredData || filteredData.length === 0) {
+    return (
+      <div className={cx("transition hover:opacity-80 bg-gray-50 dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800")}>
+        <div className="flex items-center justify-between gap-x-2">
+          <div className="flex items-center gap-x-2">
+            <dt className="font-bold text-gray-900 sm:text-sm dark:text-gray-50">
+              {title}
+            </dt>
+          </div>
+        </div>
+        <div className="mt-2 flex items-baseline justify-between">
+          <dd className="text-xl text-gray-900 dark:text-gray-50">
+            0
+          </dd>
+        </div>
+        <div className="flex h-64 items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-500 mb-2">No monitoring data available</p>
+            <p className="text-xs text-gray-400">
+              {title === "Total Pigs" ? "Add pigs to see metrics" :
+                title === "Heat Status" ? "Add pigs with heat data to see metrics" :
+                  title === "Fertility Status" ? "Add pigs with fertility data to see metrics" :
+                    "Add data to see metrics"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cx("transition hover:opacity-80")}>
       <div className="flex items-center justify-between gap-x-2">
@@ -89,7 +120,7 @@ export const ChartCard = React.memo(function ChartCard({
         data={filteredData}
         index="date"
         categories={categories} // Dynamic categories
-        colors={["blue", "violet", "gray", "violet", "blue", "gray" ]} // Dynamic colors
+        colors={["blue", "violet", "gray", "violet", "blue", "gray"]} // Dynamic colors
         valueFormatter={formatter}
         xValueFormatter={(value) => value}
         showXAxis={true}
