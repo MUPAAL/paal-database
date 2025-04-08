@@ -694,7 +694,15 @@ const BarChartVariant = React.forwardRef<HTMLDivElement, BarChartProps>(
       >
         <ResponsiveContainer>
           <RechartsBarChart
-            data={data}
+            data={data.map(item => {
+              const newItem = { ...item };
+              categories.forEach(key => {
+                if (newItem[key] === undefined || isNaN(newItem[key])) {
+                  newItem[key] = 0; // Replace NaN or undefined with 0
+                }
+              });
+              return newItem;
+            })}
             onClick={
               hasOnValueChange && (activeLegend || activeBar)
                 ? () => {

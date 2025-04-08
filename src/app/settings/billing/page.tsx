@@ -19,38 +19,38 @@ const data: {
   capacity?: string
   percentageValue?: number
 }[] = [
-  {
-    name: "Starter plan",
-    description: "Discounted plan for start-ups and growing companies",
-    value: "$90",
-  },
-  {
-    name: "Storage",
-    description: "Used 10.1 GB",
-    value: "$40",
-    capacity: "100 GB included",
-    percentageValue: 10.1,
-  },
-  {
-    name: "Bandwith",
-    description: "Used 2.9 GB",
-    value: "$10",
-    capacity: "5 GB included",
-    percentageValue: 58,
-  },
-  {
-    name: "Users",
-    description: "Used 9",
-    value: "$20",
-    capacity: "50 users included",
-    percentageValue: 18,
-  },
-  {
-    name: "Query super caching (EU-Central 1)",
-    description: "4 GB query cache, $120/mo",
-    value: "$120.00",
-  },
-]
+    {
+      name: "Starter plan",
+      description: "Discounted plan for start-ups and growing companies",
+      value: "$90",
+    },
+    {
+      name: "Storage",
+      description: "Used 10.1 GB",
+      value: "$40",
+      capacity: "100 GB included",
+      percentageValue: 10.1,
+    },
+    {
+      name: "Bandwith",
+      description: "Used 2.9 GB",
+      value: "$10",
+      capacity: "5 GB included",
+      percentageValue: 58,
+    },
+    {
+      name: "Users",
+      description: "Used 9",
+      value: "$20",
+      capacity: "50 users included",
+      percentageValue: 18,
+    },
+    {
+      name: "Query super caching (EU-Central 1)",
+      description: "4 GB query cache, $120/mo",
+      value: "$120.00",
+    },
+  ]
 
 export default function Billing() {
   const [isSpendMgmtEnabled, setIsSpendMgmtEnabled] = React.useState(true)
@@ -193,7 +193,7 @@ export default function Billing() {
                 </div>
                 <div
                   className={cx(
-                    "transform-gpu transition-all ease-[cubic-bezier(0.16,1,0.3,1.03)] will-change-transform",
+                    "transform-gpu transition-all ease-in-out will-change-transform",
                     isSpendMgmtEnabled ? "h-52 md:h-32" : "h-0",
                   )}
                   style={{

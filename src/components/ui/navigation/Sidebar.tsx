@@ -1,7 +1,9 @@
 "use client"
 import { siteConfig } from "@/app/siteConfig"
+import { useAuth } from "@/components/AuthProvider"
 import { Divider } from "@/components/Divider"
 import { Input } from "@/components/Input"
+import { LogoutButton } from "@/components/LogoutButton"
 import {
   Sidebar,
   SidebarContent,
@@ -15,9 +17,9 @@ import {
   SidebarMenuSub,
   SidebarSubLink,
 } from "@/components/Sidebar"
-import { cx, focusRing } from "@/lib/utils"
+import { cx } from "@/lib/utils"
 import { RiArrowDownSFill } from "@remixicon/react"
-import { BookText, House, Link, PackageSearch } from "lucide-react"
+import { BookText, House, Link, Settings } from "lucide-react"
 import { usePathname } from "next/navigation"
 import * as React from "react"
 import { UserProfile } from "./UserProfile"
@@ -29,12 +31,13 @@ const navigation = [
     icon: House,
     notifications: false,
   },
-  // {
-  //   name: "Notifications",
-  //   href: "",
-  //   icon: PackageSearch,
-  //   notifications: 5,
-  // },
+  {
+    name: "Admin",
+    href: "/admin",
+    icon: Settings,
+    notifications: false,
+    adminOnly: true,
+  },
 ] as const
 
 const navigation2 = [
@@ -48,44 +51,20 @@ const navigation2 = [
         href: siteConfig.baseLinks.systemOverview.farms,
       },
       {
-        name: "Monitering",
+        name: "Monitoring",
         href: siteConfig.baseLinks.systemOverview.monitoring,
       },
       {
-        name: "Device Insights",
+        name: "Insights",
         href: siteConfig.baseLinks.systemOverview.insights,
-      },
-    ],
-  },
-  {
-    name: "Tables",
-    href: siteConfig.baseLinks.details,
-    icon: PackageSearch,
-    children: [
-      {
-        name: "Pigs",
-        href: siteConfig.baseLinks.details,
       },
     ],
   },
 ] as const
 
-// navigation for sidebar element with shortcuts
 const navigation3 = [
   {
-    name: "PAAL Landing Page",
-    href: "https://cafnrfaculty.missouri.edu/mupaa/",
-    icon: Link,
-    notifications: false,
-  },
-  {
-    name: "System Documentation",
-    href: "https://github.com/brodynelly/paal/wiki",
-    icon: Link,
-    notifications: false,
-  },
-  {
-    name: "Device Table",
+    name: "Insights",
     href: "http://localhost:8080/system-overview/insights",
     icon: Link,
     notifications: false,
@@ -94,27 +73,44 @@ const navigation3 = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const { user } = useAuth()
+  const [mounted, setMounted] = React.useState(false)
+
+  // Only run on client-side
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const [openMenus, setOpenMenus] = React.useState<string[]>([
     navigation2[0].name,
-    navigation2[1].name,
+    navigation2[1]?.name,
   ])
+
   const isActive = React.useCallback((itemHref: string): boolean => {
-    if (!itemHref) return false
-
-    if (itemHref === siteConfig.baseLinks.settings?.general) {
-      return pathname.startsWith("/settings")
-    }
-
+    if (!mounted || !itemHref) return false
     return pathname === itemHref || pathname.startsWith(`${itemHref}/`)
-  }, [pathname])
+  }, [pathname, mounted])
 
-  const toggleMenu = (name: string) => {
-    setOpenMenus((prev: string[]) =>
-      prev.includes(name)
-        ? prev.filter((item: string) => item !== name)
-        : [...prev, name],
-    )
-  }
+  const toggleMenu = React.useCallback((name: string) => {
+    setOpenMenus((prev) => {
+      if (prev.includes(name)) {
+        return prev.filter((item) => item !== name)
+      }
+      return [...prev, name]
+    })
+  }, [])
+
+  // Filter navigation items based on user role
+  const filteredNavigation = React.useMemo(() => {
+    return navigation.filter(item => {
+      // If item is admin-only, only show it to admin users
+      if ('adminOnly' in item && item.adminOnly) {
+        return user?.role === 'admin'
+      }
+      return true
+    })
+  }, [user])
+
   return (
     <Sidebar {...props} className="bg-gray-50 dark:bg-gray-925 justify-center">
       <SidebarHeader className="px-3 py-4">
@@ -142,17 +138,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             />
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup className="pt-0">
+        <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              {navigation.map((item) => (
+            <SidebarMenu>
+              {filteredNavigation.map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarLink
                     href={item.href}
                     isActive={isActive(item.href)}
                     icon={item.icon}
                     notifications={item.notifications}
-
                   >
                     {item.name}
                   </SidebarLink>
@@ -164,39 +159,45 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="px-3">
           <Divider className="my-0 py-0" />
         </div>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-4">
+        <SidebarGroup className="my-4">
+          <SidebarGroupContent title="System">
+            <SidebarMenu>
               {navigation2.map((item) => (
                 <SidebarMenuItem key={item.name}>
-                  {/* @CHRIS/SEV: discussion whether to componentize (-> state mgmt) */}
-                  <button
-                    onClick={() => toggleMenu(item.name)}
-                    className={cx(
-                      "flex w-full items-center justify-between gap-x-2.5 rounded-md p-2 text-base text-gray-900 transition hover:bg-gray-200/50 sm:text-sm dark:text-gray-400 hover:dark:bg-gray-900 hover:dark:text-gray-50",
-                      focusRing,
-                    )}
+                  <SidebarLink
+                    href={item.href}
+                    isActive={isActive(item.href)}
+                    icon={item.icon}
+                    onClick={
+                      item.children
+                        ? (e) => {
+                          e.preventDefault()
+                          toggleMenu(item.name)
+                        }
+                        : undefined
+                    }
+                    suffix={
+                      item.children ? (
+                        <RiArrowDownSFill
+                          className={cx(
+                            "size-4 text-gray-500 transition-transform",
+                            openMenus.includes(item.name) && "rotate-180",
+                          )}
+                        />
+                      ) : null
+                    }
                   >
-                    <div className="flex items-center gap-2.5">
-                      <item.icon
-                        className="size-[18px] shrink-0"
-                        aria-hidden="true"
-                      />
-                      {item.name}
-                    </div>
-                    <RiArrowDownSFill
+                    {item.name}
+                  </SidebarLink>
+                  {item.children && (
+                    <SidebarMenuSub
                       className={cx(
+                        "overflow-hidden transition-all",
                         openMenus.includes(item.name)
-                          ? "rotate-0"
-                          : "-rotate-90",
-                        "size-5 shrink-0 transform text-gray-400 transition-transform duration-150 ease-in-out dark:text-gray-600",
+                          ? "max-h-96"
+                          : "max-h-0",
                       )}
-                      aria-hidden="true"
-                    />
-                  </button>
-                  {item.children && openMenus.includes(item.name) && (
-                    <SidebarMenuSub>
-                      <div className="absolute inset-y-0 left-4 w-px bg-gray-300 dark:bg-gray-800" />
+                    >
                       {item.children.map((child) => (
                         <SidebarMenuItem key={child.name}>
                           <SidebarSubLink
@@ -240,6 +241,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <div className="border-t border-gray-200 dark:border-gray-800" />
         <UserProfile />
+        <div className="px-3 py-2">
+          <LogoutButton />
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

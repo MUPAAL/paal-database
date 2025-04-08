@@ -21,6 +21,9 @@ const port = 5005;
 app.use(cors());
 app.use(express.json());
 
+// Trust proxy - needed for express-rate-limit behind a proxy
+app.set('trust proxy', 1);
+
 // Routes
 app.use('/api/farms', require('./routes/farm'));
 app.use('/api/barns', require('./routes/barn'));
@@ -31,6 +34,10 @@ app.use('/api/temperature', require('./routes/temperatureData'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/upload/postureupload', require('./routes/upload/postureUpload'));
 app.use('/api/systemmanagement', require('./routes/system-management/management'));
+app.use('/api/users', require('./routes/user'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/system', require('./routes/system'));
+app.use('/api/farms', require('./routes/farm'));
 
 // Database Connection
 const DATABASE_HOST = process.env.DATABASE_HOST;
@@ -53,11 +60,12 @@ mongoose.connect(URI)
     require('./models/PigHealthStatus');
     require('./models/PigVulvaSwelling');
     require('./models/PigBreathRate');
-    require('./models/Device'); 
-    require('./models/TemperatureData'); 
+    require('./models/Device');
+    require('./models/TemperatureData');
     require('./models/Farm');
     require('./models/Barn');
     require('./models/Stall');
+    require('./models/User');
 
     // Set up change streams after models are registered
     const Pig = mongoose.model('Pig');
@@ -95,7 +103,7 @@ const emitUpdatedStats = async () => {
     const PigFertility = require('./models/PigFertility');
     const PigHeatStatus = mongoose.model('PigHeatStatus');
     const Barn = mongoose.model('Barn');
-    const pigFertilityData = require('./models/PigFertility'); 
+    const pigFertilityData = require('./models/PigFertility');
     const Stall = mongoose.model('Stall');
 
     // Get device stats
@@ -108,14 +116,14 @@ const emitUpdatedStats = async () => {
     const latestTemps = await TemperatureData.find({})
       .sort({ timestamp: -1 })
       .limit(devices.length);
-    const avgTemp = latestTemps.length > 0 
-      ? latestTemps.reduce((acc, curr) => acc + curr.temperature, 0) / latestTemps.length 
+    const avgTemp = latestTemps.length > 0
+      ? latestTemps.reduce((acc, curr) => acc + curr.temperature, 0) / latestTemps.length
       : 0;
 
     // BCS distribution using PigBCS
     const bcsData = await PigBCS.find({}).sort({ timestamp: -1 });
-    const avgBCS = bcsData.length > 0 
-      ? bcsData.reduce((acc, curr) => acc + curr.score, 0) / bcsData.length 
+    const avgBCS = bcsData.length > 0
+      ? bcsData.reduce((acc, curr) => acc + curr.score, 0) / bcsData.length
       : 0;
 
     // Posture distribution
@@ -220,27 +228,27 @@ const emitUpdatedStats = async () => {
     // Transform pigs for UI
     const transformedPigs = pigs.map(pig => ({
       owner: `PIG-${pig.pigId.toString().padStart(3, '0')}`,
-      status:  pig.healthStatus?.status || 'healthy', // Default to healthy if no status
+      status: pig.healthStatus?.status || 'healthy', // Default to healthy if no status
       costs: pig.age,
-      region: pig.currentLocation.stallId?.name 
-        ? `${pig.currentLocation.farmId?.name | "N/A" } => ${pig.currentLocation.barnId?.name | "n/A"} => ${pig.currentLocation.stallId.name}` 
+      region: pig.currentLocation.stallId?.name
+        ? `${pig.currentLocation.farmId?.name | "N/A"} => ${pig.currentLocation.barnId?.name | "n/A"} => ${pig.currentLocation.stallId.name}`
         : 'Unknown Location',
-     stability: pig.stability, 
+      stability: pig.stability,
       lastEdited: pig.updatedAt
         ? new Date(pig.updatedAt).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
         : new Date().toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          }),
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
       breed: pig.breed,
       active: pig.active
     }))

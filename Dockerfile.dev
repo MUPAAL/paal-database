@@ -1,18 +1,28 @@
 # Dockerfile.dev
 
-FROM node:20-alpine
+FROM node:20-alpine AS base
 
 # Enable Corepack and install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 WORKDIR /usr/src/app
 
-# Install all dependencies including dev dependencies
+# Copy package files for dependency installation
 COPY package*.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
 
-# Copy all source code (with volume override in development, this step might be skipped)
-COPY . .
+# Create a development stage for faster rebuilds
+FROM base AS dev
+
+# Install all dependencies
+RUN pnpm install --no-frozen-lockfile
+
+# Copy only the frontend code
+COPY src ./src
+COPY public ./public
+COPY next.config.mjs ./next.config.mjs
+COPY tailwind.config.ts ./tailwind.config.ts
+COPY postcss.config.mjs ./postcss.config.mjs
+COPY tsconfig.json ./tsconfig.json
 
 #allow for listening on docker network, but don't expose to main server
 EXPOSE 3000

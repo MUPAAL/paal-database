@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:20-alpine AS base
 
 # Enable Corepack and install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -7,11 +7,13 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /usr/src/app
 
 # Copy only package files first for caching dependencies
-COPY package*.json ./
-copy pnpm-lock.yaml .
+COPY package*.json pnpm-lock.yaml ./
 
-# Install only production dependencies (adjust if you need dev dependencies)
-RUN pnpm install --frozen-lockfile
+# Create a development stage for faster rebuilds
+FROM base AS dev
+
+# Install all dependencies
+RUN pnpm install --no-frozen-lockfile
 
 # Copy the server code (assuming your Node back end is in the "server" folder)
 COPY server ./server
