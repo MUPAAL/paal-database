@@ -11,11 +11,8 @@ const DATABASE_PASSWORD = process.env.MONGO_INITDB_ROOT_PASSWORD;
 // Try different connection strings
 let URI = `mongodb://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@mongo:${DATABASE_PORT}/${DATABASE_DB}?replicaSet=rs0&authSource=admin`;
 
-// Log connection details
-console.log('Attempting to connect with URI:', URI.replace(/:([^:@]+)@/, ':****@'));
-console.log('DATABASE_HOST:', DATABASE_HOST);
-console.log('DATABASE_PORT:', DATABASE_PORT);
-console.log('DATABASE_DB:', DATABASE_DB);
+// Log connection attempt
+console.log('Attempting to connect to MongoDB...');
 
 async function createTestUser() {
   try {
@@ -26,9 +23,8 @@ async function createTestUser() {
       console.error('First connection attempt failed:', connectionError.message);
 
       // Try alternative connection string
-      console.log('Trying alternative connection string...');
+      console.log('Trying alternative connection method...');
       URI = `mongodb://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}?authSource=admin`;
-      console.log('Alternative URI:', URI.replace(/:([^:@]+)@/, ':****@'));
 
       await mongoose.connect(URI);
     }
