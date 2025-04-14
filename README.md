@@ -99,21 +99,34 @@ Create a `.env` file in the root directory with the following content (adjust as
     MONGO_INITDB_ROOT_USERNAME=PAAL
     MONGO_INITDB_ROOT_PASSWORD=PAAL
     MONGO_INITDB_DATABASE=paalab
-
+    
     # MongoDB Connection Settings
     DATABASE_HOST=mongo-c
     DATABASE_PORT=27017
     DATABASE_COLLECTION=paalab
-
+    
     # Backend & Server Variables
     SERVER_HOST=server-c
     SERVER_PORT=5005
     PORT=3000
-
+    
+    # Clerk URLs
+    NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+    NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/overview
+    NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/overview
+    
     # API URL for React App
     REACT_APP_API_URL=http://localhost:8080
     NEXT_PUBLIC_API_URL=http://localhost:8080
     NEXT_PUBLIC_BASE_URL=http://localhost:8080
+    
+    # Authentication
+    JWT_SECRET=your_jwt_secret_key_change_this_in_production
+    CLERK_WEBHOOK_SECRET=your_clerk_webhook_secret
+    
+    # Environment
+    NODE_ENV=development
 
 
 Docker Compose automatically loads a file named `.env` from the root directory when you run `docker compose up`.
