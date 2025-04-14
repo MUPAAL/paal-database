@@ -34,6 +34,7 @@ PAAL Monitoring System is an enterprise-grade application that helps farm owners
 - **System Administration**: Backup & restore, maintenance, and system logs
 
 ## PICTURES
+<img width="1511" alt="image" src="https://github.com/user-attachments/assets/20e618ed-063b-4c9e-a2d5-828059b83f3f" />
 ![image](https://github.com/user-attachments/assets/e4a53ab5-0ae9-4c91-9c1c-99a66e07fc44)
 ![image](https://github.com/user-attachments/assets/9de3e31f-11f5-4f76-aa04-0e9f52bd9029)
 ![image](https://github.com/user-attachments/assets/d9c74fbe-a29b-4ed4-92e1-c1dc08e64d3d)
