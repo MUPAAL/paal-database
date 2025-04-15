@@ -5,6 +5,13 @@ const { MongoClient } = require('mongodb');
 const fs = require('fs');
 const path = require('path');
 const { authenticateJWT, isAdmin } = require('../middleware/authMiddleware');
+const RateLimit = require('express-rate-limit');
+
+// Configure rate limiter: maximum of 100 requests per 15 minutes
+const limiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+});
 
 // Get system metrics
 router.get('/metrics', authenticateJWT, isAdmin, async (req, res) => {
@@ -355,7 +362,7 @@ router.post('/diagnostics', authenticateJWT, isAdmin, (req, res) => {
 });
 
 // Get system logs
-router.get('/logs', authenticateJWT, isAdmin, (req, res) => {
+router.get('/logs', limiter, authenticateJWT, isAdmin, (req, res) => {
   try {
     // Log user info for debugging
     console.log(`System logs requested by user: ${req.user.email} (${req.user.role})`);
