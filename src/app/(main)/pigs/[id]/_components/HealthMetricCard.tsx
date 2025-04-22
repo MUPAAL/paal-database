@@ -39,15 +39,48 @@ export function HealthMetricCard({
         setIsLoading(true)
         setError(null)
 
-        // Check if this is the posture/latest endpoint which is having issues
+        // Check if this is the posture endpoint which is having issues
         if (endpoint.includes('/posture/latest')) {
-          // Use the regular posture endpoint and take the first item
-          const response = await api.get(endpoint.replace('/latest', ''))
-          if (response.data && response.data.length > 0) {
-            // Use the first item from the array
-            setData(response.data[0])
-          } else {
-            setError('No posture data available')
+          try {
+            // Use the aggregated endpoint to get the most recent data
+            const response = await api.get(endpoint.replace('/latest', '/aggregated'))
+
+            if (response.data && response.data.length > 0) {
+              // Sort by date to get the most recent day
+              const sortedData = [...response.data].sort((a, b) =>
+                new Date(b.date).getTime() - new Date(a.date).getTime()
+              )
+
+              // Get the most recent day's data
+              const latestDay = sortedData[0]
+
+              // Create a mock posture record with the most common posture of the day
+              let mostCommonScore = 1
+              let highestCount = 0
+
+              for (let score = 1; score <= 5; score++) {
+                const count = latestDay.counts[score] || 0
+                if (count > highestCount) {
+                  highestCount = count
+                  mostCommonScore = score
+                }
+              }
+
+              // Create a mock record for the card
+              const mockRecord = {
+                _id: 'latest',
+                pigId: parseInt(endpoint.split('/')[2]),
+                timestamp: new Date(latestDay.date).toISOString(),
+                score: mostCommonScore
+              }
+
+              setData(mockRecord)
+            } else {
+              setError('No posture data available')
+            }
+          } catch (postureError) {
+            console.error(`Error fetching posture data:`, postureError)
+            setError('Failed to fetch posture data')
           }
         } else {
           // For other endpoints, use as normal

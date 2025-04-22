@@ -5,9 +5,9 @@ import api from "@/lib/axios"
 import { AvailableChartColorsKeys } from "@/lib/chartUtils"
 import { cx } from "@/lib/utils"
 import { InfoIcon } from "lucide-react"
+import { useParams } from "next/navigation"
 import { useQueryState } from "nuqs"
 import { useEffect, useMemo, useState } from "react"
-import { useParams } from "next/navigation"
 import { DEFAULT_RANGE, RANGE_DAYS, RangeKey } from "./dateRanges"
 
 type ChartType = "amount" | "category"
@@ -50,7 +50,7 @@ export function TransactionChart({
         ? (value as RangeKey)
         : DEFAULT_RANGE,
   })
-  
+
   const [chartData, setChartData] = useState<ChartDataItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -86,70 +86,61 @@ export function TransactionChart({
         setIsLoading(true)
         setError(null)
         const days = RANGE_DAYS[range] || RANGE_DAYS[DEFAULT_RANGE]
-        
-        // Fetch posture data
-        const response = await api.get(`/pigs/${pigId}/posture`)
-        
+
+        // Fetch aggregated posture data from the correct endpoint
+        // Make sure we're using the full URL with the correct port
+        const response = await api.get(`/pigs/${pigId}/posture/aggregated`)
+
+        // Log the first few items for debugging
+        console.log('Aggregated posture data sample:', JSON.stringify(response.data.slice(0, 3)))
+
         if (type === "amount") {
-          // Group data by date
-          const groupedByDate = response.data.reduce((acc: any, item: any) => {
-            const date = new Date(item.timestamp).toISOString().split('T')[0]
-            if (!acc[date]) {
-              acc[date] = { date, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 }
+          // Process the aggregated data for the chart
+          let processedData: ChartDataItem[] = response.data.map((dayData: any) => {
+            // Create a chart data item with the date
+            const chartItem: any = { date: dayData.date }
+
+            // If showing percentages, use the pre-calculated percentages
+            if (showPercentage) {
+              // Add percentage values for each score
+              for (let score = 1; score <= 5; score++) {
+                chartItem[score.toString()] = dayData.percentages[score] || 0
+              }
+            } else {
+              // Otherwise use the raw counts
+              for (let score = 1; score <= 5; score++) {
+                chartItem[score.toString()] = dayData.counts[score] || 0
+              }
             }
-            
-            // Increment the count for this posture score
-            const score = item.score.toString()
-            acc[date][score] = (acc[date][score] || 0) + 1
-            
-            return acc
-          }, {})
-          
-          // Convert to array and sort by date
-          let processedData = Object.values(groupedByDate)
-          processedData.sort((a: any, b: any) => 
+
+            return chartItem as ChartDataItem
+          })
+
+          // Sort by date
+          processedData.sort((a: any, b: any) =>
             new Date(a.date).getTime() - new Date(b.date).getTime()
           )
-          
-          // If showing percentages, convert counts to percentages
-          if (showPercentage) {
-            processedData = processedData.map((day: any) => {
-              const total = [1, 2, 3, 4, 5].reduce((sum, score) => 
-                sum + (day[score.toString()] || 0), 0
-              )
-              
-              const percentages: any = { date: day.date }
-              for (let score = 1; score <= 5; score++) {
-                const scoreStr = score.toString()
-                percentages[scoreStr] = total > 0 
-                  ? ((day[scoreStr] || 0) / total) * 100 
-                  : 0
-              }
-              
-              return percentages
-            })
-          }
-          
+
           setChartData(processedData)
         } else if (type === "category") {
-          // For category chart, group by posture category
+          // For category chart, aggregate all data
           const categories = ["Standing", "Lying", "Sitting", "Moving", "Other"]
           const counts = { "Standing": 0, "Lying": 0, "Sitting": 0, "Moving": 0, "Other": 0 }
-          
-          response.data.forEach((item: any) => {
-            const score = item.score
-            if (score === 1) counts["Standing"]++
-            else if (score === 2) counts["Lying"]++
-            else if (score === 3) counts["Sitting"]++
-            else if (score === 4) counts["Moving"]++
-            else counts["Other"]++
+
+          // Sum up all counts across all days
+          response.data.forEach((dayData: any) => {
+            counts["Standing"] += dayData.counts[1] || 0
+            counts["Lying"] += dayData.counts[2] || 0
+            counts["Sitting"] += dayData.counts[3] || 0
+            counts["Moving"] += dayData.counts[4] || 0
+            counts["Other"] += dayData.counts[5] || 0
           })
-          
-          const categoryData = categories.map(category => ({
+
+          const categoryData: ChartDataItem[] = categories.map(category => ({
             key: category,
             value: counts[category as keyof typeof counts]
-          }))
-          
+          })) as ChartDataItem[]
+
           setChartData(categoryData)
         }
       } catch (error) {
@@ -159,14 +150,14 @@ export function TransactionChart({
         setIsLoading(false)
       }
     }
-    
+
     if (pigId) {
       fetchData()
     }
   }, [pigId, range, type, showPercentage])
 
   const config = chartConfigs[type]
-  
+
   // Determine categories based on chart type
   const categories = useMemo(() => {
     if (type === "amount") {
@@ -175,7 +166,7 @@ export function TransactionChart({
       return ["value"]
     }
   }, [type])
-  
+
   // Determine colors based on chart type
   const colors = useMemo(() => {
     if (type === "amount") {
@@ -209,7 +200,7 @@ export function TransactionChart({
           </Tooltip>
         </div>
       </div>
-      
+
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>

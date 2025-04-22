@@ -81,7 +81,7 @@ export default function PigDashboard() {
         // Fetch BCS and posture data
         const [bcsResponse, postureResponse] = await Promise.all([
           api.get(`/pigs/${numericPigId}/bcs`),
-          api.get(`/pigs/${numericPigId}/posture`)
+          api.get(`/pigs/${numericPigId}/posture/aggregated`)
         ])
 
         setBcsHistory(bcsResponse.data)
