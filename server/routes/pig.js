@@ -490,6 +490,38 @@ router.delete('/', async (req, res) => {
   }
 })
 
+// Get latest health status for a pig
+router.get('/:id/health-status/latest', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid pig id' })
+    }
+
+    const pig = await Pig.findOne({ pigId: id })
+    if (!pig) {
+      return res.status(404).json({ error: 'Pig not found' })
+    }
+
+    // Get the latest health status record
+    const latestHealthStatus = await PigHealthStatus.findOne({ pigId: id })
+      .sort({ timestamp: -1 })
+      .limit(1)
+
+    if (!latestHealthStatus) {
+      return res.status(404).json({ error: 'No health status data found for this pig' })
+    }
+
+    res.json({
+      ...latestHealthStatus.toObject(),
+      pigId: id
+    })
+  } catch (error) {
+    console.error('Error fetching latest health status data:', error)
+    res.status(500).json({ error: 'Failed to fetch latest health status data' })
+  }
+})
+
 // Get pig health status history
 router.get('/:id/health-status', async (req, res) => {
   try {

@@ -3,7 +3,6 @@
 import { Badge } from "@/components/Badge"
 import { Button } from "@/components/Button"
 import { Card } from "@/components/Card"
-import { ProgressBar } from "@/components/ProgressBar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/Tabs"
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import api from "@/lib/axios"
@@ -14,6 +13,7 @@ import { AddHealthRecordDrawer } from "./_components/AddHealthRecordDrawer"
 import { CalendarDateRange } from "./_components/CalendarDateRange"
 import { EditPigDrawer } from "./_components/EditPigDrawer"
 import { HealthMetricCard } from "./_components/HealthMetricCard"
+import { HealthStatusCard } from "./_components/HealthStatusCard"
 import { LineChart } from "./_components/LineChartReal"
 import { TransactionChart } from "./_components/TransactionChartReal"
 
@@ -537,7 +537,11 @@ export default function PigDashboard() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Health Status</p>
-                        <p className="text-xs text-gray-500">Last check: {new Date().toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-500">
+                          {healthHistory && healthHistory.length > 0
+                            ? `Last check: ${new Date(healthHistory[0].timestamp).toLocaleDateString()}`
+                            : 'No health records'}
+                        </p>
                       </div>
                     </div>
 
@@ -555,51 +559,7 @@ export default function PigDashboard() {
               </div>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-red-500" />
-                  Health Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Overall Health</span>
-                    <span className="text-gray-900 dark:text-gray-100">85%</span>
-                  </div>
-                  <ProgressBar value={85} color="emerald" className="[&>*]:h-2" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Mobility</span>
-                    <span className="text-gray-900 dark:text-gray-100">90%</span>
-                  </div>
-                  <ProgressBar value={90} color="blue" className="[&>*]:h-2" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Appetite</span>
-                    <span className="text-gray-900 dark:text-gray-100">75%</span>
-                  </div>
-                  <ProgressBar value={75} color="amber" className="[&>*]:h-2" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Respiratory</span>
-                    <span className="text-gray-900 dark:text-gray-100">95%</span>
-                  </div>
-                  <ProgressBar value={95} color="emerald" className="[&>*]:h-2" />
-                </div>
-
-                <div className="pt-2">
-                  <p className="text-sm text-gray-500">Last health check: {new Date().toLocaleDateString()}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <HealthStatusCard pigId={pig?.pigId} />
           </div>
         </TabsContent>
 
