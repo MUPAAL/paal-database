@@ -4,11 +4,10 @@ import { Tooltip } from "@/components/Tooltip"
 import api from "@/lib/axios"
 import { AvailableChartColorsKeys } from "@/lib/chartUtils"
 import { cx } from "@/lib/utils"
+import { format, isValid, parse } from "date-fns"
 import { InfoIcon } from "lucide-react"
-import { useParams } from "next/navigation"
-import { useQueryState } from "nuqs"
+import { useParams, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
-import { DEFAULT_RANGE, RANGE_DAYS, RangeKey } from "./dateRanges"
 
 type ChartType = "amount" | "category"
 
@@ -42,14 +41,28 @@ export function TransactionChart({
   showPercentage?: boolean
 }) {
   const params = useParams()
+  const searchParams = useSearchParams()
   const pigId = params.id
-  const [range] = useQueryState<RangeKey>("range", {
-    defaultValue: DEFAULT_RANGE,
-    parse: (value): RangeKey =>
-      Object.keys(RANGE_DAYS).includes(value)
-        ? (value as RangeKey)
-        : DEFAULT_RANGE,
-  })
+
+  // Get date range from URL params
+  const startParam = searchParams.get("start")
+  const endParam = searchParams.get("end")
+
+  // Parse date range
+  const startDate = startParam ? parse(startParam, "yyyy-MM-dd", new Date()) : undefined
+  const endDate = endParam ? parse(endParam, "yyyy-MM-dd", new Date()) : undefined
+
+  // For debugging
+  useEffect(() => {
+    if (startDate || endDate) {
+      console.log('Date range changed in URL:', {
+        startParam,
+        endParam,
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString()
+      })
+    }
+  }, [startParam, endParam, startDate, endDate])
 
   const [chartData, setChartData] = useState<ChartDataItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -85,18 +98,54 @@ export function TransactionChart({
       try {
         setIsLoading(true)
         setError(null)
-        const days = RANGE_DAYS[range] || RANGE_DAYS[DEFAULT_RANGE]
 
         // Fetch aggregated posture data from the correct endpoint
         // Make sure we're using the full URL with the correct port
         const response = await api.get(`/pigs/${pigId}/posture/aggregated`)
 
+        // Filter data based on date range if provided
+        let filteredData = response.data
+
+        console.log('Date range:', { startDate, endDate })
+        console.log('Original data count:', filteredData.length)
+
+        if (startDate && isValid(startDate)) {
+          console.log('Filtering by start date:', startDate)
+          const startDateStr = format(startDate, 'yyyy-MM-dd')
+          console.log('Start date string:', startDateStr)
+
+          filteredData = filteredData.filter((item: any) => {
+            // Simple string comparison for dates in YYYY-MM-DD format
+            return item.date >= startDateStr
+          })
+          console.log('After start date filter count:', filteredData.length)
+        }
+
+        if (endDate && isValid(endDate)) {
+          console.log('Filtering by end date:', endDate)
+          const endDateStr = format(endDate, 'yyyy-MM-dd')
+          console.log('End date string:', endDateStr)
+
+          filteredData = filteredData.filter((item: any) => {
+            // Simple string comparison for dates in YYYY-MM-DD format
+            return item.date <= endDateStr
+          })
+          console.log('After end date filter count:', filteredData.length)
+        }
+
         // Log the first few items for debugging
-        console.log('Aggregated posture data sample:', JSON.stringify(response.data.slice(0, 3)))
+        console.log('Aggregated posture data sample:', JSON.stringify(filteredData.slice(0, 3)))
 
         if (type === "amount") {
           // Process the aggregated data for the chart
-          let processedData: ChartDataItem[] = response.data.map((dayData: any) => {
+          console.log('Processing data for chart...')
+          if (filteredData.length === 0) {
+            console.log('No data to process after filtering!')
+            setIsLoading(false)
+            return
+          }
+
+          let processedData: ChartDataItem[] = filteredData.map((dayData: any) => {
             // Create a chart data item with the date
             const chartItem: any = { date: dayData.date }
 
@@ -124,11 +173,18 @@ export function TransactionChart({
           setChartData(processedData)
         } else if (type === "category") {
           // For category chart, aggregate all data
+          console.log('Processing data for category chart...')
+          if (filteredData.length === 0) {
+            console.log('No data to process after filtering!')
+            setIsLoading(false)
+            return
+          }
+
           const categories = ["Standing", "Lying", "Sitting", "Moving", "Other"]
           const counts = { "Standing": 0, "Lying": 0, "Sitting": 0, "Moving": 0, "Other": 0 }
 
           // Sum up all counts across all days
-          response.data.forEach((dayData: any) => {
+          filteredData.forEach((dayData: any) => {
             counts["Standing"] += dayData.counts[1] || 0
             counts["Lying"] += dayData.counts[2] || 0
             counts["Sitting"] += dayData.counts[3] || 0
@@ -154,7 +210,7 @@ export function TransactionChart({
     if (pigId) {
       fetchData()
     }
-  }, [pigId, range, type, showPercentage])
+  }, [pigId, startDate, endDate, type, showPercentage])
 
   const config = chartConfigs[type]
 
