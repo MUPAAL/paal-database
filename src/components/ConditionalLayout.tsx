@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/AuthProvider";
 import { SidebarTrigger } from "@/components/Sidebar";
-import { Breadcrumbs } from "@/components/ui/navigation/Breadcrumbs";
+import { DynamicBreadcrumbs } from "@/components/ui/navigation/DynamicBreadcrumbs";
 import { AppSidebar } from "@/components/ui/navigation/Sidebar";
 import { ReactNode } from "react";
 
@@ -45,7 +45,7 @@ export function ConditionalLayout({ children, defaultSidebarOpen }: ConditionalL
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1 " />
             <div className="mr-2 h-4 w-px bg-gray-200 dark:bg-gray-800" />
-            <Breadcrumbs />
+            <DynamicBreadcrumbs />
           </div>
         </header>
         <div className="mx-auto max-w-screen-2xl relative">
