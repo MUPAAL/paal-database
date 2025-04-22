@@ -32,13 +32,13 @@ router.get('/', async (req, res) => {
       .populate('currentLocation.stallId')
       .populate('healthStatus')
       .sort({ updatedAt: -1 })
-    
+
     const transformedPigs = pigs.map(pig => ({
       owner: `PIG-${pig.pigId.toString().padStart(3, '0')}`,
       status: pig.healthStatus?.status || 'healthy', // Default to healthy if no status
       costs: pig.age,
-      region: pig.currentLocation.stallId?.name 
-        ? `Stall ${pig.currentLocation.stallId.name}` 
+      region: pig.currentLocation.stallId?.name
+        ? `Stall ${pig.currentLocation.stallId.name}`
         : 'Unknown Location',
       stability: Math.floor(Math.random() * 100),
       lastEdited: pig.updatedAt
@@ -70,10 +70,10 @@ router.get('/', async (req, res) => {
 router.get('/overview', async (req, res) => {
   try {
     const { filter } = req.query;
-    
+
     // Set up match conditions based on filter
     const matchConditions = { active: true };
-    
+
     // Add optional filtering
     if (filter === 'breeding') {
       matchConditions.healthStatus = 'breeding';
@@ -141,7 +141,7 @@ router.get('/overview', async (req, res) => {
     // Format the data for the chart
     const chartData = pigData.reduce((acc, item) => {
       const existingCategory = acc.find(c => c.name === item.category);
-      
+
       if (existingCategory) {
         existingCategory[item.location || 'Unknown'] = item.count;
       } else {
@@ -151,7 +151,7 @@ router.get('/overview', async (req, res) => {
           averageWeight: item.averageWeight
         });
       }
-      
+
       return acc;
     }, []);
 
@@ -164,13 +164,13 @@ router.get('/overview', async (req, res) => {
         locations: [...new Set(pigData.map(item => item.location || 'Unknown'))]
       }
     });
-    
+
   } catch (error) {
     console.error('Error fetching pig overview:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Internal server error',
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -183,16 +183,16 @@ router.get('/:id', async (req, res) => {
     if (isNaN(id)) {
       return res.status(400).json({ error: 'Invalid pig id' })
     }
-    
+
      const pig = await Pig.findOne({ pigId: id })
     //   .populate('currentLocation.farmId')
     //   .populate('currentLocation.barnId')
     //   .populate('currentLocation.stallId')
-    
+
     if (!pig) {
       return res.status(404).json({ error: 'Pig not found' })
     }
-    
+
     res.json(pig)
   } catch (error) {
     console.error('Error fetching pig:', error)
@@ -263,11 +263,35 @@ router.get('/:id/posture', async (req, res) => {
   }
 })
 
+// Get latest posture data for a pig
+router.get('/:id/posture/latest', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid pig id' })
+    }
+
+    // Create a mock response with the correct timestamp format
+    // This is a temporary solution until we fix the database issue
+    const mockPosture = {
+      _id: "6807d6bb189c514bde06c10f",
+      pigId: id,
+      timestamp: new Date().toISOString(),
+      score: Math.floor(Math.random() * 5) + 1
+    }
+
+    res.json(mockPosture)
+  } catch (error) {
+    console.error('Error fetching latest posture data:', error)
+    res.status(500).json({ error: 'Failed to fetch latest posture data' })
+  }
+})
+
 
 function calculateDateRange(range) {
   const now = new Date();
   let startDate = new Date();
-  
+
   switch(range) {
     case '30-days':
       startDate.setDate(now.getDate() - 30);
@@ -281,7 +305,7 @@ function calculateDateRange(range) {
     default: // 365-days
       startDate.setDate(now.getDate() - 365);
   }
-  
+
   return { start: startDate };
 }
 
@@ -289,12 +313,12 @@ function calculateDateRange(range) {
 router.post('/', async (req, res) => {
   try {
     const { pigId, tag, breed, age, currentLocation } = req.body
-    
+
     // Validate pigId
     if (typeof pigId !== 'string' && typeof pigId !== 'number') {
       return res.status(400).json({ error: 'Invalid pigId' })
     }
-    
+
     // Check if pig with this ID already exists
     const existingPig = await Pig.findOne({ pigId: { $eq: pigId } })
     if (existingPig) {
@@ -366,15 +390,15 @@ router.delete('/', async (req, res) => {
   try {
     const { pigIds } = req.body
     const numericPigIds = pigIds.map(id => parseInt(id)).filter(id => !isNaN(id))
-    
+
     // Find pigs to get their ObjectIds
     const pigs = await Pig.find({ pigId: { $in: numericPigIds } })
     if (!pigs.length) {
       return res.status(404).json({ error: 'No pigs found with the given IDs' })
     }
-    
+
     const pigObjectIds = pigs.map(pig => pig._id)
-    
+
     // Delete pigs and related data
     const result = await Pig.deleteMany({ pigId: { $in: numericPigIds } })
     await Promise.all([
@@ -382,9 +406,9 @@ router.delete('/', async (req, res) => {
       PigHealthStatus.deleteMany({ pigId: { $in: pigObjectIds } })
     ])
 
-    res.json({ 
+    res.json({
       message: 'Pigs deleted successfully',
-      deletedCount: result.deletedCount 
+      deletedCount: result.deletedCount
     })
   } catch (error) {
     console.error('Error deleting pigs:', error)
@@ -496,7 +520,7 @@ router.get('/analytics/time-series', async (req, res) => {
     // Initialize time-series data
     const timeSeriesData = {}
     let currentDate = new Date(startDate)
-    
+
     while (currentDate <= endDate) {
       const dateKey = currentDate.toISOString().split('T')[0]
 
@@ -608,7 +632,7 @@ router.get('/analytics/summary', async (req, res) => {
   try {
     const pigs = await Pig.find({})
       .populate('healthStatus')
-    
+
     const totalPigs = pigs.length
 
     // Health status distribution
@@ -626,7 +650,7 @@ router.get('/analytics/summary', async (req, res) => {
 
     // Age statistics
     const ages = pigs.map(p => p.age || 0)
-    const avgAge = totalPigs > 0 
+    const avgAge = totalPigs > 0
       ? (ages.reduce((a, b) => a + b, 0) / totalPigs)
       : 0;
 

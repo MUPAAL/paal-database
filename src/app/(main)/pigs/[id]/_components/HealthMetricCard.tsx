@@ -38,8 +38,22 @@ export function HealthMetricCard({
       try {
         setIsLoading(true)
         setError(null)
-        const response = await api.get(endpoint)
-        setData(response.data)
+
+        // Check if this is the posture/latest endpoint which is having issues
+        if (endpoint.includes('/posture/latest')) {
+          // Use the regular posture endpoint and take the first item
+          const response = await api.get(endpoint.replace('/latest', ''))
+          if (response.data && response.data.length > 0) {
+            // Use the first item from the array
+            setData(response.data[0])
+          } else {
+            setError('No posture data available')
+          }
+        } else {
+          // For other endpoints, use as normal
+          const response = await api.get(endpoint)
+          setData(response.data)
+        }
       } catch (error) {
         console.error(`Error fetching ${title} data:`, error)
         setError(`Failed to fetch ${title} data`)
