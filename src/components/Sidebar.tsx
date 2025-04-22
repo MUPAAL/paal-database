@@ -282,8 +282,10 @@ const SidebarLink = React.forwardRef<
         icon?: React.ElementType
         isActive?: boolean
         notifications?: number | boolean
+        suffix?: React.ReactNode
+        onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void
     }
->(({ children, isActive, icon, notifications, className, ...props }, ref) => {
+>(({ children, isActive, icon, notifications, suffix, className, ...props }, ref) => {
     const Icon = icon
     return (
         <a
@@ -302,11 +304,13 @@ const SidebarLink = React.forwardRef<
                 {Icon && <Icon className="size-[18px] shrink-0" aria-hidden="true" />}
                 {children}
             </span>
-            {notifications && (
+            {suffix ? (
+                suffix
+            ) : notifications ? (
                 <span className="inline-flex size-5 items-center justify-center rounded bg-blue-100 text-sm font-medium text-blue-600 sm:text-xs dark:bg-blue-500/10 dark:text-blue-500">
                     {notifications}
                 </span>
-            )}
+            ) : null}
         </a>
     )
 })

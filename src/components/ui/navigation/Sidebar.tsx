@@ -24,10 +24,25 @@ import { usePathname } from "next/navigation"
 import * as React from "react"
 import { UserProfile } from "./UserProfile"
 
-const navigation = [
+// Define a type for navigation items to ensure consistency
+type NavigationItem = {
+  name: string;
+  href: string;
+  icon: React.ComponentType<any>;
+  notifications?: boolean;
+  adminOnly?: boolean;
+}
+
+const navigation: NavigationItem[] = [
   {
     name: "Dashboard",
     href: "/overview",
+    icon: House,
+    notifications: false,
+  },
+  {
+    name: "Pig Table",
+    href: "/details",
     icon: House,
     notifications: false,
   },
@@ -38,13 +53,22 @@ const navigation = [
     notifications: false,
     adminOnly: true,
   },
-] as const
+]
 
-const navigation2 = [
+// Define a type for navigation items with children
+type NavigationItemWithChildren = NavigationItem & {
+  children?: Array<{
+    name: string;
+    href: string;
+  }>;
+}
+
+const navigation2: NavigationItemWithChildren[] = [
   {
     name: "System Overview",
-    href: siteConfig.baseLinks.details,
+    href: siteConfig.baseLinks.systemOverview.farms,
     icon: BookText,
+    notifications: false,
     children: [
       {
         name: "Farms",
@@ -60,16 +84,16 @@ const navigation2 = [
       },
     ],
   },
-] as const
+]
 
-const navigation3 = [
+const navigation3: NavigationItem[] = [
   {
     name: "Insights",
     href: "http://localhost:8080/system-overview/insights",
     icon: Link,
     notifications: false,
   },
-] as const
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()

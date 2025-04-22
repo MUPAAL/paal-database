@@ -11,17 +11,17 @@ const rateLimit = require('express-rate-limit')
 const mongoose = require('mongoose'); // Add this line at the top
 const PigPosture = require('../models/PostureData')
 
-// Define rate limiter: maximum of 100 requests per 15 minutes
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-})
+// // Define rate limiter: maximum of 100 requests per 15 minutes
+// const limiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 100, // limit each IP to 100 requests per windowMs
+// })
 
 
 const VALID_RANGES = ['30-days', '90-days', '180-days', '365-days'];
 
 // Apply rate limiter to all requests
-router.use(limiter)
+//router.use(limiter)
 
 // Get all pigs
 router.get('/', async (req, res) => {
