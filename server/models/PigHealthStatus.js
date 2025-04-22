@@ -3,21 +3,31 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const PigHealthStatusSchema = new Schema({
-  pigId: { 
-    type: Number, 
+  pigId: {
+    type: Number,
     required: true,
-    index: true 
+    index: true
   },
-  timestamp: { 
-    type: Date, 
+  timestamp: {
+    type: Date,
     default: Date.now,
-    index: true 
+    index: true
   },
-  status: { 
-    type: String, 
-    enum: ['at risk', 'healthy', 'critical', 'no movement'], 
+  status: {
+    type: String,
+    enum: ['at risk', 'healthy', 'critical', 'no movement'],
     required: true,
-    index: true 
+    index: true
+  },
+  notes: {
+    type: String,
+    default: ''
+  },
+  metrics: {
+    temperature: { type: Number },
+    respiratoryRate: { type: Number },
+    weight: { type: Number },
+    // Add other metrics as needed
   }
 }, { timestamps: true });
 

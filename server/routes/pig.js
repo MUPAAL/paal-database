@@ -503,19 +503,59 @@ router.get('/:id/health-status', async (req, res) => {
       return res.status(404).json({ error: 'Pig not found' })
     }
 
-    const healthStatusData = await PigHealthStatus.find({ pigId: pig._id })
+    const healthStatusData = await PigHealthStatus.find({ pigId: id })
       .sort({ timestamp: -1 })
       .limit(100)
 
     const result = healthStatusData.map(data => ({
       ...data.toObject(),
-      pigId: pig.pigId
+      pigId: id
     }))
 
     res.json(result)
   } catch (error) {
     console.error('Error fetching health status data:', error)
     res.status(500).json({ error: 'Failed to fetch health status data' })
+  }
+})
+
+// Add health status record for a pig
+router.post('/:id/health-status', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10)
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid pig id' })
+    }
+
+    const pig = await Pig.findOne({ pigId: id })
+    if (!pig) {
+      return res.status(404).json({ error: 'Pig not found' })
+    }
+
+    // Extract data from request body
+    const { status, notes, metrics, timestamp } = req.body
+
+    // Validate status
+    if (!['healthy', 'at risk', 'critical', 'no movement'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value' })
+    }
+
+    // Create new health status record
+    const newHealthStatus = await PigHealthStatus.create({
+      pigId: id,
+      status,
+      timestamp: timestamp || new Date(),
+      notes: notes || '',
+      metrics: metrics || {}
+    })
+
+    res.status(201).json({
+      ...newHealthStatus.toObject(),
+      pigId: id
+    })
+  } catch (error) {
+    console.error('Error adding health status record:', error)
+    res.status(500).json({ error: 'Failed to add health status record' })
   }
 })
 
