@@ -185,9 +185,9 @@ router.get('/:id', async (req, res) => {
     }
 
      const pig = await Pig.findOne({ pigId: id })
-    //   .populate('currentLocation.farmId')
-    //   .populate('currentLocation.barnId')
-    //   .populate('currentLocation.stallId')
+      .populate('currentLocation.farmId')
+      .populate('currentLocation.barnId')
+      .populate('currentLocation.stallId')
 
     if (!pig) {
       return res.status(404).json({ error: 'Pig not found' })

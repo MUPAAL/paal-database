@@ -65,6 +65,10 @@ export default function PigDashboard() {
   const [editPigOpen, setEditPigOpen] = useState(false)
   const [addHealthRecordOpen, setAddHealthRecordOpen] = useState(false)
 
+  // State for barn and stall names
+  const [barnName, setBarnName] = useState<string>('Not assigned')
+  const [stallName, setStallName] = useState<string>('No stall')
+
   // Function to fetch pig data
   const fetchPigData = async () => {
     try {
@@ -126,9 +130,7 @@ export default function PigDashboard() {
       return
     }
 
-    // Safely get barn and stall names
-    const barnName = getBarnName(pig?.currentLocation?.barnId)
-    const stallName = getStallName(pig?.currentLocation?.stallId)
+    // Get health status
     const healthStatus = getHealthStatus(pig?.age || 0).label
 
     // Generate report content
@@ -233,6 +235,35 @@ export default function PigDashboard() {
     }
   }, [params.id]) // fetchPigData is defined inside the component, so it's stable
 
+  // Fetch barn and stall names when pig data changes
+  useEffect(() => {
+    const fetchLocationNames = async () => {
+      try {
+        // Fetch barn name if barnId exists
+        if (pig?.currentLocation?.barnId) {
+          const barnResponse = await api.get(`/barns/${pig.currentLocation.barnId}`)
+          if (barnResponse.data && barnResponse.data.name) {
+            setBarnName(barnResponse.data.name)
+          }
+        }
+
+        // Fetch stall name if stallId exists
+        if (pig?.currentLocation?.stallId) {
+          const stallResponse = await api.get(`/stalls/${pig.currentLocation.stallId}`)
+          if (stallResponse.data && stallResponse.data.name) {
+            setStallName(stallResponse.data.name)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching location names:', error)
+      }
+    }
+
+    if (pig) {
+      fetchLocationNames()
+    }
+  }, [pig])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -280,36 +311,8 @@ export default function PigDashboard() {
     return { label: "Attention Needed", variant: "warning" }
   }
 
-  // Helper functions to convert IDs to readable names
-  const getBarnName = (barnId?: string) => {
-    if (!barnId) return 'Not assigned';
 
-    // Map of barn IDs to names
-    const barnNames: Record<string, string> = {
-      '1': 'North Barn',
-      '2': 'South Barn',
-      '3': 'East Barn',
-      '4': 'West Barn',
-      // Add more mappings as needed
-    }
 
-    return barnNames[barnId] || `Barn ${barnId}`
-  }
-
-  const getStallName = (stallId?: string) => {
-    if (!stallId) return 'No stall';
-
-    // Map of stall IDs to names
-    const stallNames: Record<string, string> = {
-      '1': 'Stall A',
-      '2': 'Stall B',
-      '3': 'Stall C',
-      '4': 'Stall D',
-      // Add more mappings as needed
-    }
-
-    return stallNames[stallId] || `Stall ${stallId}`
-  }
 
   // Make sure pig is not null before rendering
   if (!pig) {
@@ -520,10 +523,10 @@ export default function PigDashboard() {
                     </div>
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
                     <p className="text-xl font-bold text-gray-900 dark:text-gray-50">
-                      {getBarnName(pig?.currentLocation?.barnId)}
+                      {barnName}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {getStallName(pig?.currentLocation?.stallId)}
+                      {stallName}
                     </p>
                   </div>
                 </div>
