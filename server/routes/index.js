@@ -17,6 +17,7 @@ const registerRoutes = (app) => {
     { path: '/api/upload/postureupload', handler: require('./upload/postureUpload') },
     { path: '/api/systemmanagement', handler: require('./system-management/management') },
     { path: '/api/users', handler: require('./user') },
+    { path: '/api/activities', handler: require('./activity') },
     { path: '/api/auth', handler: require('./auth') },
     { path: '/api/system', handler: require('./system') }
     // Note: Removed duplicate '/api/farms' route that was in the original file

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import RecentActivitySection from "./components/RecentActivitySection";
 
 // Define the dashboard stats type
 type SystemMetrics = {
@@ -305,55 +306,7 @@ export default function AdminDashboard() {
       {/* Recent Activity */}
       <Card className="p-6">
         <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-        <div className="space-y-4">
-          {/* User Activity */}
-          <div className="flex items-start space-x-3 p-3 border-b">
-            <div className="bg-blue-100 p-2 rounded-full dark:bg-blue-900">
-              <Users className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-            </div>
-            <div>
-              <p className="font-medium">New user registered</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                A new farmer account was created
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                2 hours ago
-              </p>
-            </div>
-          </div>
-
-          {/* Farm Activity */}
-          <div className="flex items-start space-x-3 p-3 border-b">
-            <div className="bg-green-100 p-2 rounded-full dark:bg-green-900">
-              <Building2 className="h-4 w-4 text-green-600 dark:text-green-300" />
-            </div>
-            <div>
-              <p className="font-medium">Farm updated</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Farm settings were updated
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                5 hours ago
-              </p>
-            </div>
-          </div>
-
-          {/* System Activity */}
-          <div className="flex items-start space-x-3 p-3">
-            <div className="bg-purple-100 p-2 rounded-full dark:bg-purple-900">
-              <Server className="h-4 w-4 text-purple-600 dark:text-purple-300" />
-            </div>
-            <div>
-              <p className="font-medium">System maintenance</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Scheduled system maintenance completed
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                1 day ago
-              </p>
-            </div>
-          </div>
-        </div>
+        <RecentActivitySection />
       </Card>
     </div>
   );

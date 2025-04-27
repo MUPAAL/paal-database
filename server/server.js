@@ -28,6 +28,9 @@ async function startServer() {
     // Initialize Socket.IO
     const io = initializeSocketIO(httpServer);
 
+    // Make io available to routes
+    app.set('io', io);
+
     // Connect to database
     await connectToDatabase();
 

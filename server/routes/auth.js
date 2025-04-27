@@ -131,6 +131,31 @@ router.post('/login', loginLimiter, async (req, res) => {
     );
     console.log('Token generated successfully');
 
+    // Log the login activity
+    const { logActivity } = require('../services/activityLogger');
+    const activity = await logActivity({
+      type: 'user',
+      action: 'login',
+      description: `User "${user.email}" logged in`,
+      userId: user._id,
+      ipAddress: req.ip,
+      metadata: {
+        email: user.email,
+        role: user.role,
+        name: `${user.firstName} ${user.lastName}`
+      }
+    });
+
+    // Emit the activity to all connected clients
+    try {
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('activity', activity);
+      }
+    } catch (error) {
+      console.warn('Failed to emit activity event:', error.message);
+    }
+
     // Return user info and token
     const userResponse = user.toObject();
     delete userResponse.password;

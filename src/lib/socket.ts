@@ -28,3 +28,17 @@ export const subscribeToPigs = (callback: (pigs: any) => void) => {
     socket.off('pigs_update', callback)
   }
 }
+
+export const subscribeToActivities = (callback: (activities: any) => void) => {
+  socket.on('recent_activities', callback)
+  return () => {
+    socket.off('recent_activities', callback)
+  }
+}
+
+export const subscribeToNewActivity = (callback: (activity: any) => void) => {
+  socket.on('activity', callback)
+  return () => {
+    socket.off('activity', callback)
+  }
+}

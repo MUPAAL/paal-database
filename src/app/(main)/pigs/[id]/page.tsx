@@ -348,9 +348,8 @@ export default function PigDashboard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center">
           <NewCalendarDateRange />
-          <Button>Export Data</Button>
         </div>
       </div>
 
