@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, useActivities } from "@/hooks/useActivities";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -75,9 +76,25 @@ export default function RecentActivitySection() {
 
   if (isLoading) {
     return (
-      <div className="p-6 text-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
-        <p className="mt-2 text-sm text-gray-500">Loading activities...</p>
+      <div className="space-y-4">
+        {[...Array(5)].map((_, index) => (
+          <div key={index} className="flex items-start space-x-3 p-3 border-b last:border-b-0">
+            <div className={`p-2 rounded-full bg-gray-100 dark:bg-gray-800`}>
+              <ActivityIcon className="h-4 w-4 text-gray-400" />
+            </div>
+            <div>
+              <div className="h-5 mb-2 flex items-center">
+                <Skeleton className="h-5 w-48" />
+              </div>
+              <div className="h-4 mb-1 flex items-center">
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <div className="h-3 flex items-center">
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import DashboardSkeleton from "./components/DashboardSkeleton";
 import RecentActivitySection from "./components/RecentActivitySection";
 
 // Define the dashboard stats type
@@ -137,13 +138,7 @@ export default function AdminDashboard() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="grid gap-4">
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">Loading Dashboard...</h2>
-        </Card>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // Error state

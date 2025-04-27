@@ -7,6 +7,11 @@ export function cx(...args: ClassValue[]) {
   return twMerge(clsx(...args))
 }
 
+// cn is an alias for cx for compatibility with shadcn/ui components
+export function cn(...args: ClassValue[]) {
+  return twMerge(clsx(...args))
+}
+
 // Tremor Raw focusInput [v0.0.1]
 
 export const focusInput = [
@@ -88,7 +93,7 @@ export const formatters: { [key: string]: any } = {
   },
   unit: (number: number | null | undefined) => {
     if (typeof number !== "number" || isNaN(number)) return "0"
-    
+
     const fixedNumber = Number(number.toFixed(4))
     return usNumberFormatter(fixedNumber)
   },
