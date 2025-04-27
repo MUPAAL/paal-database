@@ -71,8 +71,8 @@ export function TransactionChart({
   const chartConfigs: Record<ChartType, ChartConfig> = {
     amount: {
       title: "Daily Posture Distribution",
-      tooltipContent: "Distribution of posture values (1-5) recorded each day",
-      color: "blue",
+      tooltipContent: "Distribution of posture types recorded each day",
+      color: "emerald",
       valueFormatter: (number: number) => `${number}%`,
       xValueFormatter: (dateString: string) => {
         const date = new Date(dateString)
@@ -214,6 +214,15 @@ export function TransactionChart({
 
   const config = chartConfigs[type]
 
+  // Define posture category labels
+  const postureCategoryLabels = {
+    "1": "Standing",
+    "2": "Lying",
+    "3": "Sitting",
+    "4": "Moving",
+    "5": "Other"
+  }
+
   // Determine categories based on chart type
   const categories = useMemo(() => {
     if (type === "amount") {
@@ -226,9 +235,10 @@ export function TransactionChart({
   // Determine colors based on chart type
   const colors = useMemo(() => {
     if (type === "amount") {
-      return ["blue", "cyan", "indigo", "violet", "purple"]
+      // More visually appealing color palette for posture data
+      return ["emerald", "amber", "blue", "violet", "pink"]
     } else {
-      return ["blue"]
+      return ["emerald"]
     }
   }, [type])
 
@@ -280,6 +290,28 @@ export function TransactionChart({
           layout={config.layout}
           barCategoryGap="6%"
           aria-labelledby={`${type}-chart-title`}
+          customTooltip={(props) => {
+            if (!props.active || !props.payload?.length) return null;
+
+            return (
+              <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md dark:border-gray-800 dark:bg-gray-900">
+                <p className="mb-2 font-medium">{props.label}</p>
+                {props.payload.map((entry, index) => {
+                  const categoryKey = entry.dataKey as string;
+                  const categoryLabel = type === "amount" ? postureCategoryLabels[categoryKey] || categoryKey : categoryKey;
+                  return (
+                    <div key={index} className="flex items-center gap-2">
+                      <div
+                        className="h-3 w-3 rounded-sm"
+                        style={{ backgroundColor: entry.color }}
+                      />
+                      <span className="text-sm">{categoryLabel}: {entry.value}{showPercentage ? '%' : ''}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }}
         />
       )}
     </div>
