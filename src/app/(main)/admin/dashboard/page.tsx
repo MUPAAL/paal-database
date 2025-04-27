@@ -1,13 +1,14 @@
 "use client";
 
 import { Button } from "@/components/Button_S";
-import { Card } from "@/components/Card";
+import { AdminActionCard } from "@/components/ui/admin/AdminActionCard";
+import { AdminActivityCard } from "@/components/ui/admin/AdminActivityCard";
+import { AdminProgressCard } from "@/components/ui/admin/AdminProgressCard";
 import api from "@/utils/api";
 import {
   Activity,
   AlertTriangle,
   Building2,
-  CheckCircle,
   Server,
   Users
 } from "lucide-react";
@@ -144,165 +145,206 @@ export default function AdminDashboard() {
   // Error state
   if (error) {
     return (
-      <div className="grid gap-4">
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">Error</h2>
-          <p className="text-red-500">{error}</p>
-          <Button onClick={() => setError(null)}>Retry</Button>
-        </Card>
-      </div>
+      <section aria-labelledby="error-message">
+        <h1
+          id="error-message"
+          className="scroll-mt-10 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
+        >
+          Error
+        </h1>
+        <div className="mt-4">
+          <div className="bg-white dark:bg-gray-950 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+            <div className="flex flex-col items-center justify-center py-6">
+              <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
+              <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-50">Something went wrong</h2>
+              <p className="text-red-500 mb-6">{error}</p>
+              <Button onClick={() => setError(null)}>Retry</Button>
+            </div>
+          </div>
+        </div>
+      </section>
     );
   }
 
   // Main dashboard
   return (
-    <div className="grid gap-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Users Card */}
-        <Card className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Users</p>
-              <h3 className="text-2xl font-bold mt-1">{stats.totalUsers}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {stats.activeUsers} active
-              </p>
-            </div>
-            <div className="bg-blue-100 p-3 rounded-full dark:bg-blue-900">
-              <Users className="h-6 w-6 text-blue-600 dark:text-blue-300" />
-            </div>
-          </div>
-        </Card>
+    <>
+      <section aria-labelledby="current-status">
+        <h1
+          id="current-status"
+          className="scroll-mt-10 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
+        >
+          Admin Dashboard
+        </h1>
+        <div className="mt-4 grid grid-cols-1 gap-6 sm:mt-8 sm:grid-cols-2 lg:mt-10 xl:grid-cols-4">
+          {/* Users Card */}
+          <AdminProgressCard
+            title="User Metrics"
+            value={stats.totalUsers}
+            valueDescription="total users"
+            ctaDescription="Manage user accounts."
+            ctaText="View users"
+            ctaLink="/admin/users"
+            data={[
+              {
+                title: "Active Users",
+                current: stats.activeUsers,
+                allowed: stats.totalUsers,
+                percentage: stats.totalUsers > 0 ? (stats.activeUsers / stats.totalUsers) * 100 : 0
+              },
+              {
+                title: "Inactive Users",
+                current: stats.totalUsers - stats.activeUsers,
+                allowed: stats.totalUsers,
+                percentage: stats.totalUsers > 0 ? ((stats.totalUsers - stats.activeUsers) / stats.totalUsers) * 100 : 0
+              }
+            ]}
+            icon={<Users className="h-6 w-6 text-blue-600 dark:text-blue-300" />}
+          />
 
-        {/* Farms Card */}
-        <Card className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Farms</p>
-              <h3 className="text-2xl font-bold mt-1">{stats.totalFarms}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                {stats.activeFarms} active
-              </p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full dark:bg-green-900">
-              <Building2 className="h-6 w-6 text-green-600 dark:text-green-300" />
-            </div>
-          </div>
-        </Card>
+          {/* Farms Card */}
+          <AdminProgressCard
+            title="Farm Metrics"
+            value={stats.totalFarms}
+            valueDescription="total farms"
+            ctaDescription="Manage farm settings."
+            ctaText="View farms"
+            ctaLink="/admin/farms"
+            data={[
+              {
+                title: "Active Farms",
+                current: stats.activeFarms,
+                allowed: stats.totalFarms,
+                percentage: stats.totalFarms > 0 ? (stats.activeFarms / stats.totalFarms) * 100 : 0
+              },
+              {
+                title: "Inactive Farms",
+                current: stats.totalFarms - stats.activeFarms,
+                allowed: stats.totalFarms,
+                percentage: stats.totalFarms > 0 ? ((stats.totalFarms - stats.activeFarms) / stats.totalFarms) * 100 : 0
+              }
+            ]}
+            icon={<Building2 className="h-6 w-6 text-green-600 dark:text-green-300" />}
+          />
 
-        {/* System Status Card */}
-        <Card className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">System Status</p>
-              <h3 className="text-2xl font-bold mt-1 flex items-center">
-                {stats.systemMetrics?.server.status === "healthy" ? (
-                  <>
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-1" />
-                    Healthy
-                  </>
-                ) : stats.systemMetrics?.server.status === "warning" ? (
-                  <>
-                    <AlertTriangle className="h-5 w-5 text-yellow-500 mr-1" />
-                    Warning
-                  </>
-                ) : (
-                  <>
-                    <AlertTriangle className="h-5 w-5 text-red-500 mr-1" />
-                    Error
-                  </>
-                )}
-              </h3>
-              <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                <div className="flex items-center">
-                  <span className="font-medium">Server:</span>
-                  <span className="ml-1">{stats.systemMetrics?.server.status || "Unknown"}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="font-medium">Database:</span>
-                  <span className="ml-1">{stats.systemMetrics?.database.status || "Unknown"}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="font-medium">Storage:</span>
-                  <span className="ml-1">{stats.systemMetrics?.storage.status || "Unknown"}</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="font-medium">CPU:</span>
-                  <span className="ml-1">{stats.systemMetrics?.cpu.status || "Unknown"}</span>
-                </div>
-              </div>
-            </div>
-            <div className="bg-purple-100 p-3 rounded-full dark:bg-purple-900">
-              <Server className="h-6 w-6 text-purple-600 dark:text-purple-300" />
-            </div>
-          </div>
-        </Card>
+          {/* System Status Card */}
+          <AdminProgressCard
+            title="System Status"
+            change={stats.systemMetrics?.server.status === "healthy" ? "Healthy" :
+              stats.systemMetrics?.server.status === "warning" ? "Warning" : "Error"}
+            value={stats.systemMetrics?.server.status === "healthy" ? "100%" :
+              stats.systemMetrics?.server.status === "warning" ? "75%" : "25%"}
+            valueDescription="system health"
+            ctaDescription="View system details."
+            ctaText="View details"
+            ctaLink="/admin/system"
+            data={[
+              {
+                title: "Server",
+                current: stats.systemMetrics?.server.status === "healthy" ? 100 :
+                  stats.systemMetrics?.server.status === "warning" ? 75 : 25,
+                allowed: 100,
+                percentage: stats.systemMetrics?.server.status === "healthy" ? 100 :
+                  stats.systemMetrics?.server.status === "warning" ? 75 : 25
+              },
+              {
+                title: "Database",
+                current: stats.systemMetrics?.database.status === "healthy" ? 100 :
+                  stats.systemMetrics?.database.status === "warning" ? 75 : 25,
+                allowed: 100,
+                percentage: stats.systemMetrics?.database.status === "healthy" ? 100 :
+                  stats.systemMetrics?.database.status === "warning" ? 75 : 25
+              },
+              {
+                title: "Storage",
+                current: stats.systemMetrics?.storage.status === "healthy" ? 100 :
+                  stats.systemMetrics?.storage.status === "warning" ? 75 : 25,
+                allowed: 100,
+                percentage: stats.systemMetrics?.storage.status === "healthy" ? 100 :
+                  stats.systemMetrics?.storage.status === "warning" ? 75 : 25
+              },
+              {
+                title: "CPU",
+                current: stats.systemMetrics?.cpu.status === "healthy" ? 100 :
+                  stats.systemMetrics?.cpu.status === "warning" ? 75 : 25,
+                allowed: 100,
+                percentage: stats.systemMetrics?.cpu.status === "healthy" ? 100 :
+                  stats.systemMetrics?.cpu.status === "warning" ? 75 : 25
+              }
+            ]}
+            icon={<Server className="h-6 w-6 text-purple-600 dark:text-purple-300" />}
+          />
 
-        {/* Activity Card */}
-        <Card className="p-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Activity</p>
-              <h3 className="text-2xl font-bold mt-1">Recent</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Last updated: {new Date(stats.lastUpdated).toLocaleTimeString()}
-              </p>
-            </div>
-            <div className="bg-orange-100 p-3 rounded-full dark:bg-orange-900">
-              <Activity className="h-6 w-6 text-orange-600 dark:text-orange-300" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Users Action */}
-          <div
-            className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            onClick={() => router.push("/admin/users")}
-          >
-            <Users className="h-6 w-6 text-blue-600 dark:text-blue-400 mb-2" />
-            <h3 className="font-medium">Manage Users</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Add, edit, or remove users
-            </p>
-          </div>
-
-          {/* Farms Action */}
-          <div
-            className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            onClick={() => router.push("/admin/farms")}
-          >
-            <Building2 className="h-6 w-6 text-green-600 dark:text-green-400 mb-2" />
-            <h3 className="font-medium">Manage Farms</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Add, edit, or remove farms
-            </p>
-          </div>
-
-          {/* System Action */}
-          <div
-            className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            onClick={() => router.push("/admin/system")}
-          >
-            <Server className="h-6 w-6 text-purple-600 dark:text-purple-400 mb-2" />
-            <h3 className="font-medium">System Settings</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Configure system settings
-            </p>
-          </div>
+          {/* Activity Card */}
+          <AdminProgressCard
+            title="Activity Overview"
+            value="Recent"
+            valueDescription="system activity"
+            ctaDescription={`Last updated: ${new Date(stats.lastUpdated).toLocaleTimeString()}`}
+            data={[
+              {
+                title: "User Activity",
+                current: 100,
+                allowed: 100,
+                percentage: 100
+              },
+              {
+                title: "System Events",
+                current: 100,
+                allowed: 100,
+                percentage: 100
+              }
+            ]}
+            icon={<Activity className="h-6 w-6 text-orange-600 dark:text-orange-300" />}
+          />
         </div>
-      </Card>
+      </section>
 
-      {/* Recent Activity */}
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-        <RecentActivitySection />
-      </Card>
-    </div>
+      <section aria-labelledby="quick-actions" className="mt-10">
+        <h2
+          id="quick-actions"
+          className="scroll-mt-8 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
+        >
+          Quick Actions
+        </h2>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <AdminActionCard
+            title="Manage Users"
+            description="Add, edit, or remove users from the system"
+            icon={<Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />}
+            onClick={() => router.push("/admin/users")}
+          />
+          <AdminActionCard
+            title="Manage Farms"
+            description="Add, edit, or remove farms from the system"
+            icon={<Building2 className="h-6 w-6 text-green-600 dark:text-green-400" />}
+            onClick={() => router.push("/admin/farms")}
+          />
+          <AdminActionCard
+            title="System Settings"
+            description="Configure system settings and preferences"
+            icon={<Server className="h-6 w-6 text-purple-600 dark:text-purple-400" />}
+            onClick={() => router.push("/admin/system")}
+          />
+        </div>
+      </section>
+
+      <section aria-labelledby="recent-activity" className="mt-10">
+        <h2
+          id="recent-activity"
+          className="scroll-mt-8 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
+        >
+          Recent Activity
+        </h2>
+        <div className="mt-4">
+          <AdminActivityCard
+            title="System Events"
+            icon={<Activity className="h-5 w-5 text-orange-600 dark:text-orange-300" />}
+          >
+            <RecentActivitySection />
+          </AdminActivityCard>
+        </div>
+      </section>
+    </>
   );
 }

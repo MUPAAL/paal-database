@@ -1,8 +1,9 @@
 "use client";
 
 import { Button } from "@/components/Button_S";
-import { Card } from "@/components/Card";
+import { AdminPageHeader } from "@/components/ui/admin/AdminPageHeader";
 import axios from "axios";
+import { AlertTriangle, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AssignFarmModal } from "../components/AssignFarmModal";
@@ -50,12 +51,12 @@ export default function UsersPage() {
         setIsLoading(true);
         const token = localStorage.getItem("token");
         const user = localStorage.getItem("user");
-        
+
         if (!token || !user) {
           router.push("/login");
           return;
         }
-        
+
         try {
           const userData = JSON.parse(user);
           if (userData.role !== "admin") {
@@ -247,44 +248,63 @@ export default function UsersPage() {
     setIsAssignModalOpen(true);
   };
 
+  // Loading state
   if (isLoading) {
     return (
-      <div className="grid gap-4">
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">Loading Users...</h2>
-        </Card>
-      </div>
+      <section aria-labelledby="loading-state">
+        <div className="bg-white dark:bg-gray-950 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent mb-4"></div>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-50 mb-2">
+              Loading Users...
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Please wait while we load the data...
+            </p>
+          </div>
+        </div>
+      </section>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="grid gap-4">
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">Error</h2>
-          <p className="text-red-500">{error}</p>
-          <Button onClick={() => setError(null)} className="mt-4">Retry</Button>
-        </Card>
-      </div>
+      <section aria-labelledby="error-message">
+        <div className="bg-white dark:bg-gray-950 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+          <div className="flex flex-col items-center justify-center py-6">
+            <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
+            <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-50">Something went wrong</h2>
+            <p className="text-red-500 mb-6">{error}</p>
+            <Button onClick={() => setError(null)}>Retry</Button>
+          </div>
+        </div>
+      </section>
     );
   }
 
+  // Main content
   return (
-    <div className="grid gap-6">
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold">User Management</h2>
-          <Button onClick={() => setIsCreateModalOpen(true)}>Create User</Button>
-        </div>
-
-        <UserTable
-          users={users}
-          onAssignFarm={handleOpenAssignModal}
-          onToggleActive={handleToggleActive}
-          onDelete={handleDeleteUser}
-          currentUserId={currentUser?._id || ""}
+    <div>
+      <section aria-labelledby="user-management">
+        <AdminPageHeader
+          title="User Management"
+          description="Manage user accounts and permissions"
+          actionLabel="Create User"
+          onAction={() => setIsCreateModalOpen(true)}
+          icon={<Users className="h-6 w-6 text-blue-600 dark:text-blue-300" />}
         />
-      </Card>
+
+        <div className="bg-white dark:bg-gray-950 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+          <UserTable
+            users={users}
+            onAssignFarm={handleOpenAssignModal}
+            onToggleActive={handleToggleActive}
+            onDelete={handleDeleteUser}
+            currentUserId={currentUser?._id || ""}
+          />
+        </div>
+      </section>
 
       {/* Create User Modal */}
       <CreateUserModal
