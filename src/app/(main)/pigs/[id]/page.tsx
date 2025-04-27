@@ -10,11 +10,11 @@ import { Activity, ArrowLeft, Calendar, Clock, Heart, Info, Scale, Thermometer }
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { AddHealthRecordDrawer } from "./_components/AddHealthRecordDrawer"
-import { CalendarDateRange } from "./_components/CalendarDateRange"
 import { EditPigDrawer } from "./_components/EditPigDrawer"
 import { HealthMetricCard } from "./_components/HealthMetricCard"
 import { HealthStatusCard } from "./_components/HealthStatusCard"
 import { LineChart } from "./_components/LineChartReal"
+import { NewCalendarDateRange } from "./_components/NewCalendarDateRange"
 import { TransactionChart } from "./_components/TransactionChartReal"
 
 interface PigData {
@@ -349,7 +349,7 @@ export default function PigDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <CalendarDateRange />
+          <NewCalendarDateRange />
           <Button>Export Data</Button>
         </div>
       </div>
