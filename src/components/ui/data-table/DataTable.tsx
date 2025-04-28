@@ -33,6 +33,30 @@ interface DataTableProps<TData> {
 export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
   const pageSize = 20
   const [rowSelection, setRowSelection] = React.useState({})
+  const [isAnyDrawerOpen, setIsAnyDrawerOpen] = React.useState(false)
+
+  // Check if any drawer is open by looking at the DOM
+  React.useEffect(() => {
+    const checkForOpenDrawers = () => {
+      const drawers = document.querySelectorAll('[role="dialog"]');
+      setIsAnyDrawerOpen(drawers.length > 0);
+    };
+
+    // Initial check
+    checkForOpenDrawers();
+
+    // Set up a mutation observer to detect drawer changes
+    const observer = new MutationObserver(checkForOpenDrawers);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['aria-hidden']
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   const table = useReactTable({
     data,
     columns,
@@ -45,7 +69,7 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
         pageSize: pageSize,
       },
     },
-    enableRowSelection: true,
+    enableRowSelection: !isAnyDrawerOpen, // Disable selection when drawer is open
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onRowSelectionChange: setRowSelection,
@@ -87,8 +111,12 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
-                    onClick={() => row.toggleSelected(!row.getIsSelected())}
-                    className="group select-none hover:bg-gray-50 hover:dark:bg-gray-900"
+                    onClick={() => {
+                      if (!isAnyDrawerOpen) {
+                        row.toggleSelected(!row.getIsSelected());
+                      }
+                    }}
+                    className={`group select-none ${!isAnyDrawerOpen ? 'hover:bg-gray-50 hover:dark:bg-gray-900' : ''}`}
                   >
                     {row.getVisibleCells().map((cell, index) => (
                       <TableCell
