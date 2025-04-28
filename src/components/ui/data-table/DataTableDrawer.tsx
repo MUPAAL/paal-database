@@ -12,7 +12,6 @@ import {
 } from "@/components/Drawer";
 import { Input } from "@/components/Input";
 import { Label } from "@/components/Label";
-import { RadioCardGroup, RadioCardItem } from "@/components/RadioCardGroup";
 import {
   Select,
   SelectContent,
@@ -245,23 +244,26 @@ function FarmsForm({
         <>
           {/* Let user pick new farm/barn/stall */}
           <FormField label="Select Farm">
-            <RadioCardGroup
+            <Select
               value={formData.farm}
-              className="grid grid-cols-2 gap-2 text-sm"
-              onValueChange={(value) => {
+              onValueChange={(value: string) => {
                 onUpdateForm({ farm: value, barn: "", stall: "" });
               }}
             >
-              {farms.map((farm) => (
-                <RadioCardItem
-                  key={farm._id}
-                  value={farm._id}
-                  className="flex flex-col justify-start p-2.5 text-base duration-75 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 data-[state=checked]:border-transparent data-[state=checked]:bg-blue-500 data-[state=checked]:text-white sm:text-sm"
-                >
-                  {farm.name}
-                </RadioCardItem>
-              ))}
-            </RadioCardGroup>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Farm" />
+              </SelectTrigger>
+              <SelectContent>
+                {farms.map((farm) => (
+                  <SelectItemExtended
+                    key={farm._id}
+                    value={farm._id}
+                    option={farm.name}
+                    description={farm.location || ""}
+                  />
+                ))}
+              </SelectContent>
+            </Select>
           </FormField>
 
           <FormField label="Select Barn">
