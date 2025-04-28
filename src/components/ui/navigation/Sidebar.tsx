@@ -195,7 +195,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader className="px-3 py-4">
         <div className="flex items-center gap-3">
           <span className="flex size-9 items-center justify-center rounded-md bg-white p-1.5 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-            {/* <Logo className="size-6 text-blue-500 dark:text-blue-500" /> */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-6 text-yellow-600 dark:text-yellow-400"
+            >
+              <path d="M15 11v.01" />
+              <path d="M16 16a5 5 0 0 0 5-5c0-1.34-.55-2.44-1.41-3.3C17.5 5.75 14.5 4 11 4c-3.2 0-6 1.5-8 4 2 2.5 4.8 4 8 4h1" />
+              <path d="M11 20a5 5 0 0 0 5-5" />
+              <path d="M19 16c-1.3 0-2.4-.84-2.82-2" />
+              <path d="M3 8c0 3.8 2.5 7 6 8" />
+              <path d="M16.5 19a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+            </svg>
           </span>
           <div>
             <span className="block text-sm font-semibold text-gray-900 dark:text-gray-50">
