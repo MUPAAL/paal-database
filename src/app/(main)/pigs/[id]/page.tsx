@@ -65,7 +65,8 @@ export default function PigDashboard() {
   const [editPigOpen, setEditPigOpen] = useState(false)
   const [addHealthRecordOpen, setAddHealthRecordOpen] = useState(false)
 
-  // State for barn and stall names
+  // State for location names
+  const [farmName, setFarmName] = useState<string>('Not assigned')
   const [barnName, setBarnName] = useState<string>('Not assigned')
   const [stallName, setStallName] = useState<string>('No stall')
 
@@ -191,6 +192,10 @@ export default function PigDashboard() {
           <h2>Location</h2>
           <div class="info-grid">
             <div class="info-item">
+              <div class="label">Farm</div>
+              <div class="value">${farmName}</div>
+            </div>
+            <div class="info-item">
               <div class="label">Barn</div>
               <div class="value">${barnName}</div>
             </div>
@@ -235,27 +240,120 @@ export default function PigDashboard() {
     }
   }, [params.id]) // fetchPigData is defined inside the component, so it's stable
 
-  // Fetch barn and stall names when pig data changes
+  // Fetch location names when pig data changes
   useEffect(() => {
     const fetchLocationNames = async () => {
       try {
-        // Fetch barn name if barnId exists
-        if (pig?.currentLocation?.barnId) {
-          const barnResponse = await api.get(`/barns/${pig.currentLocation.barnId}`)
-          if (barnResponse.data && barnResponse.data.name) {
-            setBarnName(barnResponse.data.name)
+        console.log("Pig location data:", pig?.currentLocation)
+
+        // First, try to get the stall data which should contain references to barn and farm
+        if (pig?.currentLocation?.stallId) {
+          console.log("Fetching stall with ID:", pig.currentLocation.stallId)
+          try {
+            const stallResponse = await api.get(`/stalls/${pig.currentLocation.stallId}`)
+            console.log("Stall response:", stallResponse.data)
+
+            // Set stall name
+            if (stallResponse.data && stallResponse.data.name) {
+              setStallName(stallResponse.data.name)
+              console.log("Set stall name to:", stallResponse.data.name)
+            }
+
+            // Get barn data from stall
+            if (stallResponse.data && stallResponse.data.barnId) {
+              // If barnId is an object with _id property
+              const barnId = typeof stallResponse.data.barnId === 'object' && stallResponse.data.barnId?._id
+                ? stallResponse.data.barnId._id
+                : stallResponse.data.barnId;
+
+              console.log("Fetching barn with ID from stall:", barnId)
+              try {
+                const barnResponse = await api.get(`/barns/${barnId}`)
+                console.log("Barn response:", barnResponse.data)
+
+                // Set barn name
+                if (barnResponse.data && barnResponse.data.name) {
+                  setBarnName(barnResponse.data.name)
+                  console.log("Set barn name to:", barnResponse.data.name)
+                }
+
+                // Get farm data from barn
+                if (barnResponse.data && barnResponse.data.farmId) {
+                  console.log("Fetching farm with ID from barn:", barnResponse.data.farmId)
+                  try {
+                    const farmResponse = await api.get(`/farms/${barnResponse.data.farmId}`)
+                    console.log("Farm response:", farmResponse.data)
+
+                    // Set farm name
+                    if (farmResponse.data && farmResponse.data.name) {
+                      setFarmName(farmResponse.data.name)
+                      console.log("Set farm name to:", farmResponse.data.name)
+                    }
+                  } catch (farmError) {
+                    console.error("Error fetching farm from barn:", farmError)
+                  }
+                }
+              } catch (barnError) {
+                console.error("Error fetching barn from stall:", barnError)
+              }
+            }
+          } catch (stallError) {
+            console.error("Error fetching stall:", stallError)
           }
         }
+        // If no stall ID, try barn ID
+        else if (pig?.currentLocation?.barnId) {
+          console.log("Fetching barn with ID:", pig.currentLocation.barnId)
+          try {
+            const barnResponse = await api.get(`/barns/${pig.currentLocation.barnId}`)
+            console.log("Barn response:", barnResponse.data)
 
-        // Fetch stall name if stallId exists
-        if (pig?.currentLocation?.stallId) {
-          const stallResponse = await api.get(`/stalls/${pig.currentLocation.stallId}`)
-          if (stallResponse.data && stallResponse.data.name) {
-            setStallName(stallResponse.data.name)
+            // Set barn name
+            if (barnResponse.data && barnResponse.data.name) {
+              setBarnName(barnResponse.data.name)
+              console.log("Set barn name to:", barnResponse.data.name)
+            }
+
+            // Get farm data from barn
+            if (barnResponse.data && barnResponse.data.farmId) {
+              console.log("Fetching farm with ID from barn:", barnResponse.data.farmId)
+              try {
+                const farmResponse = await api.get(`/farms/${barnResponse.data.farmId}`)
+                console.log("Farm response:", farmResponse.data)
+
+                // Set farm name
+                if (farmResponse.data && farmResponse.data.name) {
+                  setFarmName(farmResponse.data.name)
+                  console.log("Set farm name to:", farmResponse.data.name)
+                }
+              } catch (farmError) {
+                console.error("Error fetching farm from barn:", farmError)
+              }
+            }
+          } catch (barnError) {
+            console.error("Error fetching barn:", barnError)
           }
+        }
+        // If no stall or barn ID, try farm ID directly
+        else if (pig?.currentLocation?.farmId) {
+          console.log("Fetching farm with ID:", pig.currentLocation.farmId)
+          try {
+            const farmResponse = await api.get(`/farms/${pig.currentLocation.farmId}`)
+            console.log("Farm response:", farmResponse.data)
+
+            // Set farm name
+            if (farmResponse.data && farmResponse.data.name) {
+              setFarmName(farmResponse.data.name)
+              console.log("Set farm name to:", farmResponse.data.name)
+            }
+          } catch (farmError) {
+            console.error("Error fetching farm:", farmError)
+          }
+        } else {
+          console.log("No location IDs found in pig data")
         }
       } catch (error) {
-        console.error('Error fetching location names:', error)
+        console.error('Error in fetchLocationNames:', error)
       }
     }
 
@@ -522,10 +620,10 @@ export default function PigDashboard() {
                     </div>
                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Location</h3>
                     <p className="text-xl font-bold text-gray-900 dark:text-gray-50">
-                      {barnName}
+                      {farmName}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {stallName}
+                      {barnName} • {stallName}
                     </p>
                   </div>
                 </div>
@@ -643,7 +741,7 @@ export default function PigDashboard() {
               <TransactionChart
                 yAxisWidth={70}
                 type="amount"
-                className="h-96"
+                className="h-[500px]"
                 showPercentage={true}
               />
             </CardContent>

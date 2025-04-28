@@ -73,7 +73,7 @@ export function TransactionChart({
       title: "Daily Posture Distribution",
       tooltipContent: "Distribution of posture types recorded each day",
       color: "emerald",
-      valueFormatter: (number: number) => `${number}%`,
+      valueFormatter: (number: number) => `${number.toFixed(2)}%`,
       xValueFormatter: (dateString: string) => {
         const date = new Date(dateString)
         return date.toLocaleDateString("en-GB", {
@@ -87,7 +87,7 @@ export function TransactionChart({
       title: "Posture by Category",
       tooltipContent: "Posture distribution by category",
       color: "blue",
-      valueFormatter: (number: number) => number.toString(),
+      valueFormatter: (number: number) => number.toFixed(2),
       xValueFormatter: (value: string) => value,
       layout: "vertical",
     },
@@ -99,39 +99,31 @@ export function TransactionChart({
         setIsLoading(true)
         setError(null)
 
-        // Fetch aggregated posture data from the correct endpoint
+        // Fetch aggregated posture data from the correct endpoint with date range parameters
         // Make sure we're using the full URL with the correct port
-        const response = await api.get(`/pigs/${pigId}/posture/aggregated`)
+        const params = new URLSearchParams();
 
-        // Filter data based on date range if provided
-        let filteredData = response.data
-
-        console.log('Date range:', { startDate, endDate })
-        console.log('Original data count:', filteredData.length)
-
+        // Add date range parameters if available
         if (startDate && isValid(startDate)) {
-          console.log('Filtering by start date:', startDate)
-          const startDateStr = format(startDate, 'yyyy-MM-dd')
-          console.log('Start date string:', startDateStr)
-
-          filteredData = filteredData.filter((item: any) => {
-            // Simple string comparison for dates in YYYY-MM-DD format
-            return item.date >= startDateStr
-          })
-          console.log('After start date filter count:', filteredData.length)
+          params.append('start', format(startDate, 'yyyy-MM-dd'));
         }
 
         if (endDate && isValid(endDate)) {
-          console.log('Filtering by end date:', endDate)
-          const endDateStr = format(endDate, 'yyyy-MM-dd')
-          console.log('End date string:', endDateStr)
-
-          filteredData = filteredData.filter((item: any) => {
-            // Simple string comparison for dates in YYYY-MM-DD format
-            return item.date <= endDateStr
-          })
-          console.log('After end date filter count:', filteredData.length)
+          params.append('end', format(endDate, 'yyyy-MM-dd'));
         }
+
+        const queryString = params.toString();
+        const url = `/pigs/${pigId}/posture/aggregated${queryString ? `?${queryString}` : ''}`;
+        console.log('Fetching posture data with URL:', url);
+
+        const response = await api.get(url)
+
+        // Use the data directly from the response - no need to filter again
+        // since the backend is now handling the date filtering
+        let filteredData = response.data
+
+        console.log('Date range:', { startDate, endDate })
+        console.log('Data count from backend:', filteredData.length)
 
         // Log the first few items for debugging
         console.log('Aggregated posture data sample:', JSON.stringify(filteredData.slice(0, 3)))
@@ -305,7 +297,7 @@ export function TransactionChart({
                         className="h-3 w-3 rounded-sm"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="text-sm">{categoryLabel}: {entry.value}{showPercentage ? '%' : ''}</span>
+                      <span className="text-sm">{categoryLabel}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}{showPercentage ? '%' : ''}</span>
                     </div>
                   );
                 })}

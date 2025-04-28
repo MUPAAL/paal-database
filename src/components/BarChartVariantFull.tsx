@@ -638,7 +638,12 @@ const BarChartVariant = React.forwardRef<HTMLDivElement, BarChartProps>(
         )
         const categoryColors = constructCategoryColors(categories, colors)
         const [activeBar, setActiveBar] = React.useState<any | undefined>(undefined)
-        const yAxisDomain = getYAxisDomain(autoMinValue, minValue, maxValue)
+        // For percentage charts, limit to 100%
+        const yAxisDomain = type === "percent"
+            ? [0, 1]
+            : props.valueFormatter && props.valueFormatter.toString().includes('%')
+                ? [0, 100]
+                : getYAxisDomain(autoMinValue, minValue, maxValue)
         const hasOnValueChange = !!onValueChange
         const stacked = type === "stacked" || type === "percent"
 
