@@ -120,7 +120,7 @@ router.post('/', authenticateJWT, isAdmin, async (req, res) => {
 router.put('/:id', authenticateJWT, async (req, res) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, role, assignedFarm, isActive, password } = req.body;
+    const { firstName, lastName, role, assignedFarm, isActive, password, permissions } = req.body;
 
     // Check if user exists
     const user = await User.findById(id);
@@ -128,13 +128,15 @@ router.put('/:id', authenticateJWT, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Only admins can update role, assignedFarm, and isActive
-    if ((role || assignedFarm !== undefined || isActive !== undefined) && req.user.role !== 'admin') {
+    // Only admins can update role, assignedFarm, isActive, and permissions
+    if ((role || assignedFarm !== undefined || isActive !== undefined || permissions) &&
+      (req.user.role !== 'admin' && req.user.role !== 'Administrator')) {
       return res.status(403).json({ error: 'Unauthorized to update these fields' });
     }
 
     // Users can only update their own profile unless they're an admin
-    if (user._id.toString() !== req.user.id && req.user.role !== 'admin') {
+    if (user._id.toString() !== req.user.id &&
+      (req.user.role !== 'admin' && req.user.role !== 'Administrator')) {
       return res.status(403).json({ error: 'Unauthorized to update this user' });
     }
 
@@ -155,12 +157,18 @@ router.put('/:id', authenticateJWT, async (req, res) => {
     if (firstName) updateData.firstName = firstName;
     if (lastName) updateData.lastName = lastName;
     if (password) updateData.password = password; // Will be hashed by pre-save hook
-    if (role && req.user.role === 'admin') updateData.role = role;
-    if (assignedFarm !== undefined && req.user.role === 'admin') {
+
+    const isUserAdmin = (req.user.role === 'admin' || req.user.role === 'Administrator');
+
+    if (role && isUserAdmin) updateData.role = role;
+    if (assignedFarm !== undefined && isUserAdmin) {
       updateData.assignedFarm = assignedFarm || null;
     }
-    if (isActive !== undefined && req.user.role === 'admin') {
+    if (isActive !== undefined && isUserAdmin) {
       updateData.isActive = isActive;
+    }
+    if (permissions && isUserAdmin) {
+      updateData.permissions = permissions;
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -177,10 +185,15 @@ router.put('/:id', authenticateJWT, async (req, res) => {
 });
 
 // Update user permissions (admin only)
-router.put('/:id/permissions', authenticateJWT, isAdmin, async (req, res) => {
+router.put('/:id/permissions', authenticateJWT, async (req, res) => {
   try {
     const { id } = req.params;
     const { permissions } = req.body;
+
+    // Only admins can update permissions
+    if (req.user.role !== 'admin' && req.user.role !== 'Administrator') {
+      return res.status(403).json({ error: 'Unauthorized to update permissions' });
+    }
 
     // Validate permissions
     if (!Array.isArray(permissions)) {
@@ -208,10 +221,15 @@ router.put('/:id/permissions', authenticateJWT, isAdmin, async (req, res) => {
 });
 
 // Update user restrictions (admin only)
-router.put('/:id/restrictions', authenticateJWT, isAdmin, async (req, res) => {
+router.put('/:id/restrictions', authenticateJWT, async (req, res) => {
   try {
     const { id } = req.params;
     const { restrictedFarms = [], restrictedStalls = [] } = req.body;
+
+    // Only admins can update restrictions
+    if (req.user.role !== 'admin' && req.user.role !== 'Administrator') {
+      return res.status(403).json({ error: 'Unauthorized to update restrictions' });
+    }
 
     // Validate arrays
     if (!Array.isArray(restrictedFarms) || !Array.isArray(restrictedStalls)) {

@@ -30,7 +30,7 @@ const UserSchema = new Schema({
   lastName: { type: String, required: true },
   role: {
     type: String,
-    enum: ['admin', 'farmer', 'Farm Manager', 'Farm Worker', 'Veterinarian', 'Data Analyst'],
+    enum: ['admin', 'Administrator', 'farmer', 'Farm Manager', 'Farm Worker', 'Veterinarian', 'Data Analyst'],
     default: 'farmer',
     index: true
   },

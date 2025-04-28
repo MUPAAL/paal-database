@@ -49,7 +49,7 @@ const isAdmin = (req, res, next) => {
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'admin' && req.user.role !== 'Administrator') {
     return res.status(403).json({ error: 'Not authorized as admin' });
   }
 
