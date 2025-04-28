@@ -50,7 +50,7 @@ export function EnhancedActionCard({
 
   return (
     <div
-      className="flex flex-col p-5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer"
+      className="flex flex-col p-5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 shadow-sm cursor-pointer"
       onClick={onClick}
     >
       <div className={getIconContainerClass(color)}>

@@ -18,8 +18,8 @@ export function AdminActionCard({
       onClick={onClick}
       className={cx(
         "flex flex-col p-4 border border-gray-200 dark:border-gray-800 rounded-lg",
-        "bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900",
-        "cursor-pointer transition-colors"
+        "bg-white dark:bg-gray-950",
+        "cursor-pointer"
       )}
     >
       <div className="mb-3">

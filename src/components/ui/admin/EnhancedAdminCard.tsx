@@ -87,7 +87,7 @@ export function EnhancedAdminCard({
   if (isEmpty) {
     return (
       <div
-        className="flex flex-col justify-between bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all"
+        className="flex flex-col justify-between bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"
         onClick={onClick}
       >
         <div>
@@ -140,7 +140,7 @@ export function EnhancedAdminCard({
 
   return (
     <div
-      className="flex flex-col justify-between bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all"
+      className="flex flex-col justify-between bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm"
       onClick={onClick}
     >
       <div>

@@ -30,6 +30,7 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -62,6 +63,7 @@
   * {
     @apply border-border;
   }
+
   @layer base {
     :root {
       --chart-1: 12 76% 61%;
@@ -70,7 +72,7 @@
       --chart-4: 43 74% 66%;
       --chart-5: 27 87% 67%;
     }
-   
+
     .dark {
       --chart-1: 220 70% 50%;
       --chart-2: 160 60% 45%;
@@ -79,7 +81,94 @@
       --chart-5: 340 75% 55%;
     }
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom animations */
+@layer utilities {
+
+  /* Blob animation for background shapes */
+  @keyframes blob {
+    0% {
+      transform: translate(0px, 0px) scale(1);
+    }
+
+    33% {
+      transform: translate(30px, -50px) scale(1.1);
+    }
+
+    66% {
+      transform: translate(-20px, 20px) scale(0.9);
+    }
+
+    100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+  }
+
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  /* Shake animation for error messages */
+  @keyframes shake {
+
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+      transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+      transform: translateX(5px);
+    }
+  }
+
+  .animate-shake {
+    animation: shake 0.6s cubic-bezier(.36, .07, .19, .97) both;
+  }
+
+  /* Custom toggle checkbox styles */
+  .toggle-checkbox:checked {
+    right: 0;
+    border-color: #3b82f6;
+    background-color: #3b82f6;
+  }
+
+  .toggle-label {
+    background-color: #e5e7eb;
+  }
+
+  .dark .toggle-label {
+    background-color: #374151;
+  }
+
+  .toggle-checkbox:checked+.toggle-label {
+    background-color: #93c5fd;
+  }
+
+  .dark .toggle-checkbox:checked+.toggle-label {
+    background-color: #1e40af;
   }
 }
