@@ -1,15 +1,16 @@
 "use client";
 
 import { Button } from "@/components/Button_S";
-import { AdminActionCard } from "@/components/ui/admin/AdminActionCard";
-import { AdminActivityCard } from "@/components/ui/admin/AdminActivityCard";
-import { AdminProgressCard } from "@/components/ui/admin/AdminProgressCard";
+import { EnhancedActionCard } from "@/components/ui/admin/EnhancedActionCard";
+import { EnhancedAdminCard } from "@/components/ui/admin/EnhancedAdminCard";
 import api from "@/utils/api";
 import {
   Activity,
   AlertTriangle,
   Building2,
+  ChevronRight,
   Server,
+  Settings,
   Users
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -145,15 +146,18 @@ export default function AdminDashboard() {
   // Error state
   if (error) {
     return (
-      <section aria-labelledby="error-message">
+      <section
+        aria-labelledby="error-message"
+        className="animate-fade-in"
+      >
         <h1
           id="error-message"
-          className="scroll-mt-10 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
+          className="scroll-mt-10 text-xl font-semibold text-gray-900 dark:text-gray-50"
         >
           Error
         </h1>
         <div className="mt-4">
-          <div className="bg-white dark:bg-gray-950 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
             <div className="flex flex-col items-center justify-center py-6">
               <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
               <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-50">Something went wrong</h2>
@@ -168,23 +172,31 @@ export default function AdminDashboard() {
 
   // Main dashboard
   return (
-    <>
+    <div className="animate-fade-in">
       <section aria-labelledby="current-status">
-        <h1
-          id="current-status"
-          className="scroll-mt-10 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
-        >
-          Admin Dashboard
-        </h1>
-        <div className="mt-4 grid grid-cols-1 gap-6 sm:mt-8 sm:grid-cols-2 lg:mt-10 xl:grid-cols-4">
+        <div className="flex items-center justify-between mb-6">
+          <h1
+            id="current-status"
+            className="scroll-mt-10 text-2xl font-bold text-gray-900 dark:text-gray-50"
+          >
+            Admin Dashboard
+          </h1>
+          <button
+            onClick={() => router.push('/admin/system')}
+            className="flex items-center gap-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
+          >
+            <Settings className="h-4 w-4" />
+            <span>Settings</span>
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {/* Users Card */}
-          <AdminProgressCard
+          <EnhancedAdminCard
             title="User Metrics"
+            subtitle="Active and inactive users"
             value={stats.totalUsers}
             valueDescription="total users"
-            ctaDescription="Manage user accounts."
-            ctaText="View users"
-            ctaLink="/admin/users"
             data={[
               {
                 title: "Active Users",
@@ -199,17 +211,20 @@ export default function AdminDashboard() {
                 percentage: stats.totalUsers > 0 ? ((stats.totalUsers - stats.activeUsers) / stats.totalUsers) * 100 : 0
               }
             ]}
-            icon={<Users className="h-6 w-6 text-blue-600 dark:text-blue-300" />}
+            icon={<Users />}
+            color="blue"
+            ctaDescription="Manage user accounts."
+            ctaText="View users"
+            ctaLink="/admin/users"
+            onClick={() => router.push("/admin/users")}
           />
 
           {/* Farms Card */}
-          <AdminProgressCard
+          <EnhancedAdminCard
             title="Farm Metrics"
+            subtitle="Active and inactive farms"
             value={stats.totalFarms}
             valueDescription="total farms"
-            ctaDescription="Manage farm settings."
-            ctaText="View farms"
-            ctaLink="/admin/farms"
             data={[
               {
                 title: "Active Farms",
@@ -224,20 +239,23 @@ export default function AdminDashboard() {
                 percentage: stats.totalFarms > 0 ? ((stats.totalFarms - stats.activeFarms) / stats.totalFarms) * 100 : 0
               }
             ]}
-            icon={<Building2 className="h-6 w-6 text-green-600 dark:text-green-300" />}
+            icon={<Building2 />}
+            color="green"
+            ctaDescription="Manage farm settings."
+            ctaText="View farms"
+            ctaLink="/admin/farms"
+            onClick={() => router.push("/admin/farms")}
           />
 
           {/* System Status Card */}
-          <AdminProgressCard
+          <EnhancedAdminCard
             title="System Status"
+            subtitle="Server performance metrics"
             change={stats.systemMetrics?.server.status === "healthy" ? "Healthy" :
               stats.systemMetrics?.server.status === "warning" ? "Warning" : "Error"}
             value={stats.systemMetrics?.server.status === "healthy" ? "100%" :
               stats.systemMetrics?.server.status === "warning" ? "75%" : "25%"}
             valueDescription="system health"
-            ctaDescription="View system details."
-            ctaText="View details"
-            ctaLink="/admin/system"
             data={[
               {
                 title: "Server",
@@ -272,15 +290,20 @@ export default function AdminDashboard() {
                   stats.systemMetrics?.cpu.status === "warning" ? 75 : 25
               }
             ]}
-            icon={<Server className="h-6 w-6 text-purple-600 dark:text-purple-300" />}
+            icon={<Server />}
+            color="purple"
+            ctaDescription="View system details."
+            ctaText="View details"
+            ctaLink="/admin/system"
+            onClick={() => router.push("/admin/system")}
           />
 
           {/* Activity Card */}
-          <AdminProgressCard
+          <EnhancedAdminCard
             title="Activity Overview"
+            subtitle="User and system events"
             value="Recent"
             valueDescription="system activity"
-            ctaDescription={`Last updated: ${new Date(stats.lastUpdated).toLocaleTimeString()}`}
             data={[
               {
                 title: "User Activity",
@@ -295,56 +318,76 @@ export default function AdminDashboard() {
                 percentage: 100
               }
             ]}
-            icon={<Activity className="h-6 w-6 text-orange-600 dark:text-orange-300" />}
+            icon={<Activity />}
+            color="orange"
+            ctaDescription={`Last updated: ${new Date(stats.lastUpdated).toLocaleTimeString()}`}
           />
         </div>
       </section>
 
       <section aria-labelledby="quick-actions" className="mt-10">
-        <h2
-          id="quick-actions"
-          className="scroll-mt-8 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
-        >
-          Quick Actions
-        </h2>
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <AdminActionCard
+        <div className="flex items-center justify-between mb-6">
+          <h2
+            id="quick-actions"
+            className="scroll-mt-8 text-xl font-semibold text-gray-900 dark:text-gray-50"
+          >
+            Quick Actions
+          </h2>
+          <button
+            onClick={() => router.push('/admin/system')}
+            className="flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
+          >
+            <span>View all</span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <EnhancedActionCard
             title="Manage Users"
-            description="Add, edit, or remove users from the system"
-            icon={<Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />}
+            description="Add, edit, or remove users from the system. Manage permissions and access control."
+            icon={<Users />}
+            color="blue"
             onClick={() => router.push("/admin/users")}
           />
-          <AdminActionCard
+          <EnhancedActionCard
             title="Manage Farms"
-            description="Add, edit, or remove farms from the system"
-            icon={<Building2 className="h-6 w-6 text-green-600 dark:text-green-400" />}
+            description="Add, edit, or remove farms from the system. Configure farm settings and locations."
+            icon={<Building2 />}
+            color="green"
             onClick={() => router.push("/admin/farms")}
           />
-          <AdminActionCard
+          <EnhancedActionCard
             title="System Settings"
-            description="Configure system settings and preferences"
-            icon={<Server className="h-6 w-6 text-purple-600 dark:text-purple-400" />}
+            description="Configure system settings and preferences. Manage backups and system maintenance."
+            icon={<Server />}
+            color="purple"
             onClick={() => router.push("/admin/system")}
           />
         </div>
       </section>
 
       <section aria-labelledby="recent-activity" className="mt-10">
-        <h2
-          id="recent-activity"
-          className="scroll-mt-8 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
-        >
-          Recent Activity
-        </h2>
-        <div className="mt-4">
-          <AdminActivityCard
-            title="System Events"
-            icon={<Activity className="h-5 w-5 text-orange-600 dark:text-orange-300" />}
+        <div className="flex items-center justify-between mb-6">
+          <h2
+            id="recent-activity"
+            className="scroll-mt-8 text-xl font-semibold text-gray-900 dark:text-gray-50"
           >
-            <RecentActivitySection />
-          </AdminActivityCard>
+            Recent Activity
+          </h2>
+          <button
+            onClick={() => router.push('/admin/activities')}
+            className="flex items-center gap-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors"
+          >
+            <span>View all activities</span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-4">
+          <RecentActivitySection />
         </div>
       </section>
-    </>
+    </div>
   );
 }

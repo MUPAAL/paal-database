@@ -1,8 +1,10 @@
 "use client";
 
+import { EnhancedActivityCard } from "@/components/ui/admin/EnhancedActivityCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Activity, useActivities } from "@/hooks/useActivities";
 import { formatDistanceToNow } from "date-fns";
+
 import {
   Activity as ActivityIcon,
   Box,
@@ -45,23 +47,43 @@ export default function RecentActivitySection() {
     }
   };
 
+  // Get color based on activity type
+  const getActivityColor = (type: Activity["type"]): "blue" | "green" | "purple" | "orange" | "red" | "yellow" | "indigo" => {
+    switch (type) {
+      case "user":
+        return "blue";
+      case "farm":
+        return "green";
+      case "system":
+        return "purple";
+      case "device":
+        return "orange";
+      case "pig":
+        return "red";
+      case "barn":
+        return "yellow";
+      default:
+        return "indigo";
+    }
+  };
+
   // Get background color based on activity type
   const getActivityBgColor = (type: Activity["type"]) => {
     switch (type) {
       case "user":
-        return "bg-blue-100 dark:bg-blue-900";
+        return "bg-blue-100 dark:bg-blue-900/40";
       case "farm":
-        return "bg-green-100 dark:bg-green-900";
+        return "bg-green-100 dark:bg-green-900/40";
       case "system":
-        return "bg-purple-100 dark:bg-purple-900";
+        return "bg-purple-100 dark:bg-purple-900/40";
       case "device":
-        return "bg-orange-100 dark:bg-orange-900";
+        return "bg-orange-100 dark:bg-orange-900/40";
       case "pig":
-        return "bg-red-100 dark:bg-red-900";
+        return "bg-red-100 dark:bg-red-900/40";
       case "barn":
-        return "bg-yellow-100 dark:bg-yellow-900";
+        return "bg-yellow-100 dark:bg-yellow-900/40";
       default:
-        return "bg-gray-100 dark:bg-gray-900";
+        return "bg-gray-100 dark:bg-gray-900/40";
     }
   };
 
@@ -74,77 +96,105 @@ export default function RecentActivitySection() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {[...Array(5)].map((_, index) => (
-          <div key={index} className="flex items-start space-x-3 p-3 border-b last:border-b-0">
-            <div className={`p-2 rounded-full bg-gray-100 dark:bg-gray-800`}>
-              <ActivityIcon className="h-4 w-4 text-gray-400" />
-            </div>
-            <div>
-              <div className="h-5 mb-2 flex items-center">
-                <Skeleton className="h-5 w-48" />
-              </div>
-              <div className="h-4 mb-1 flex items-center">
-                <Skeleton className="h-4 w-32" />
-              </div>
-              <div className="h-3 flex items-center">
-                <Skeleton className="h-3 w-24" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (error) {
-    // If it's an authentication error, still show the component but with a message
-    if (error === 'Authentication required') {
+  const activityContent = () => {
+    if (isLoading) {
       return (
         <div className="space-y-4">
-          <div className="p-6 text-center">
-            <p className="text-gray-500">Waiting for activity data...</p>
-            <p className="text-xs text-gray-400 mt-1">Real-time updates will appear here</p>
+          {[...Array(5)].map((_, index) => (
+            <div key={index} className="flex items-start space-x-3 p-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
+              <div className={`p-2 rounded-full bg-gray-100 dark:bg-gray-800`}>
+                <ActivityIcon className="h-4 w-4 text-gray-400" />
+              </div>
+              <div className="flex-1">
+                <div className="h-5 mb-2 flex items-center">
+                  <Skeleton className="h-5 w-48" />
+                </div>
+                <div className="h-4 mb-1 flex items-center">
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <div className="h-3 flex items-center">
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (error) {
+      // If it's an authentication error, still show the component but with a message
+      if (error === 'Authentication required') {
+        return (
+          <div className="space-y-4">
+            <div className="p-6 text-center">
+              <p className="text-gray-500">Waiting for activity data...</p>
+              <p className="text-xs text-gray-400 mt-1">Real-time updates will appear here</p>
+            </div>
           </div>
+        );
+      }
+
+      return (
+        <div className="p-6 text-center">
+          <p className="text-red-500">{error}</p>
+        </div>
+      );
+    }
+
+    if (activities.length === 0) {
+      return (
+        <div className="p-6 text-center">
+          <p className="text-gray-500">No recent activities</p>
         </div>
       );
     }
 
     return (
-      <div className="p-6 text-center">
-        <p className="text-red-500">{error}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {activities.length === 0 ? (
-        <div className="p-6 text-center">
-          <p className="text-gray-500">No recent activities</p>
-        </div>
-      ) : (
-        activities.map((activity) => (
-          <div key={activity._id} className="flex items-start space-x-3 p-3 border-b last:border-b-0">
+      <div className="space-y-4">
+        {activities.map((activity, index) => (
+          <div
+            key={activity._id}
+            className="flex items-start space-x-3 p-3 border-b border-gray-100 dark:border-gray-800 last:border-b-0 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+          >
             <div className={`p-2 rounded-full ${getActivityBgColor(activity.type)}`}>
               {getActivityIcon(activity.type)}
             </div>
-            <div>
-              <p className="font-medium">{activity.description}</p>
+            <div className="flex-1">
+              <p className="font-medium text-gray-900 dark:text-gray-100">{activity.description}</p>
               {activity.userId && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   By {activity.userId.firstName} {activity.userId.lastName}
                 </p>
               )}
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                 {getFormattedTime(activity.createdAt)}
               </p>
             </div>
           </div>
-        ))
-      )}
-    </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <EnhancedActivityCard
+      title="System Events"
+      subtitle="Recent activity across the platform"
+      icon={<ActivityIcon />}
+      color="orange"
+      footer={
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-500">
+            Last updated: {new Date().toLocaleTimeString()}
+          </span>
+          <button className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+            View all activities
+          </button>
+        </div>
+      }
+    >
+      {activityContent()}
+    </EnhancedActivityCard>
   );
 }
