@@ -5,7 +5,7 @@ import { AdminEmptyState } from "@/components/ui/admin/AdminEmptyState";
 import { AdminFarmCard } from "@/components/ui/admin/AdminFarmCard";
 import { AdminPageHeader } from "@/components/ui/admin/AdminPageHeader";
 import api from "@/utils/api";
-import { AlertTriangle, Building2 } from "lucide-react";
+import { AlertTriangle, BarChart2, Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CreateFarmModal from "./CreateFarmModal";
@@ -162,13 +162,23 @@ export default function FarmsPage() {
   return (
     <div>
       <section aria-labelledby="farm-management">
-        <AdminPageHeader
-          title="Farm Management"
-          description="Manage farms and their settings"
-          actionLabel="Add Farm"
-          onAction={handleCreateFarm}
-          icon={<Building2 className="h-6 w-6 text-green-600 dark:text-green-300" />}
-        />
+        <div className="flex justify-between items-start mb-6">
+          <AdminPageHeader
+            title="Farm Management"
+            description="Manage farms and their settings"
+            actionLabel="Add Farm"
+            onAction={handleCreateFarm}
+            icon={<Building2 className="h-6 w-6 text-green-600 dark:text-green-300" />}
+          />
+          <SimpleButton
+            variant="primary"
+            onClick={() => router.push('/admin/farms/unified')}
+            className="flex items-center"
+          >
+            <BarChart2 className="h-4 w-4 mr-2" />
+            Unified Farm View
+          </SimpleButton>
+        </div>
 
         {/* Farms Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
