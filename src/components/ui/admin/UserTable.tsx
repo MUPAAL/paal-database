@@ -12,6 +12,7 @@ import {
   Settings,
   Shield,
   Trash,
+  User,
   UserCheck,
   UserMinus,
   Users,
@@ -45,6 +46,7 @@ type UserTableProps = {
   onDelete: (user: ExtendedUser) => void;
   onManagePermissions: (user: ExtendedUser) => void;
   onManageRestrictions: (user: ExtendedUser) => void;
+  onEdit?: (user: ExtendedUser) => void; // Optional callback for editing a user
   currentUserId: string;
   onCreateUser?: () => void; // Optional callback for creating a new user
 };
@@ -56,6 +58,7 @@ export function UserTable({
   onDelete,
   onManagePermissions,
   onManageRestrictions,
+  onEdit,
   currentUserId,
   onCreateUser,
 }: UserTableProps) {
@@ -586,6 +589,18 @@ export function UserTable({
                                 left: `${dropdownPosition.left}px`
                               }}>
                               <div className="py-1">
+                                {onEdit && (
+                                  <button
+                                    onClick={() => {
+                                      onEdit(user);
+                                      setOpenDropdown(null);
+                                    }}
+                                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                  >
+                                    <User className="h-4 w-4" />
+                                    Edit User
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => {
                                     onManagePermissions(user);
@@ -699,6 +714,17 @@ export function UserTable({
                           <div>
                             <h4 className="text-sm font-medium mb-2">Quick Actions</h4>
                             <div className="flex flex-wrap gap-2">
+                              {onEdit && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => onEdit(user)}
+                                  className="flex items-center gap-1"
+                                >
+                                  <User className="h-3 w-3" />
+                                  Edit
+                                </Button>
+                              )}
                               <Button
                                 variant="secondary"
                                 size="sm"

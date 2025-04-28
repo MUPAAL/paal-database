@@ -176,6 +176,85 @@ router.put('/:id', authenticateJWT, async (req, res) => {
   }
 });
 
+// Update user permissions (admin only)
+router.put('/:id/permissions', authenticateJWT, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { permissions } = req.body;
+
+    // Validate permissions
+    if (!Array.isArray(permissions)) {
+      return res.status(400).json({ error: 'Permissions must be an array' });
+    }
+
+    // Check if user exists
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Update permissions
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { permissions },
+      { new: true, runValidators: true }
+    ).select('-password').populate('assignedFarm', 'name location');
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error updating user permissions:', error);
+    res.status(500).json({ error: 'Failed to update user permissions' });
+  }
+});
+
+// Update user restrictions (admin only)
+router.put('/:id/restrictions', authenticateJWT, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { restrictedFarms = [], restrictedStalls = [] } = req.body;
+
+    // Validate arrays
+    if (!Array.isArray(restrictedFarms) || !Array.isArray(restrictedStalls)) {
+      return res.status(400).json({ error: 'Restricted farms and stalls must be arrays' });
+    }
+
+    // Check if user exists
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Validate farm IDs
+    if (restrictedFarms.length > 0) {
+      for (const farmId of restrictedFarms) {
+        if (!mongoose.Types.ObjectId.isValid(farmId)) {
+          return res.status(400).json({ error: `Invalid farm ID: ${farmId}` });
+        }
+
+        const farm = await Farm.findById(farmId);
+        if (!farm) {
+          return res.status(404).json({ error: `Farm not found: ${farmId}` });
+        }
+      }
+    }
+
+    // Update restrictions
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      {
+        restrictedFarms,
+        restrictedStalls
+      },
+      { new: true, runValidators: true }
+    ).select('-password').populate('assignedFarm', 'name location');
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error updating user restrictions:', error);
+    res.status(500).json({ error: 'Failed to update user restrictions' });
+  }
+});
+
 // Delete user (admin only)
 router.delete('/:id', authenticateJWT, isAdmin, async (req, res) => {
   try {

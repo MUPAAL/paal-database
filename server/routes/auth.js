@@ -24,7 +24,16 @@ router.post('/register', authenticateJWT, isAdmin, async (req, res) => {
       return res.status(403).json({ error: 'Only admins can register new users' });
     }
 
-    const { email, password, firstName, lastName, role } = req.body;
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      role,
+      permissions = [],
+      restrictedFarms = [],
+      restrictedStalls = []
+    } = req.body;
 
     // Validate input
     if (!email || !password || !firstName || !lastName) {
@@ -43,7 +52,10 @@ router.post('/register', authenticateJWT, isAdmin, async (req, res) => {
       password, // Will be hashed by pre-save hook
       firstName,
       lastName,
-      role: role || 'farmer' // Default to farmer if not specified
+      role: role || 'farmer', // Default to farmer if not specified
+      permissions,
+      restrictedFarms,
+      restrictedStalls
     });
 
     await newUser.save();

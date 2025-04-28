@@ -30,7 +30,7 @@ const UserSchema = new Schema({
   lastName: { type: String, required: true },
   role: {
     type: String,
-    enum: ['admin', 'farmer'],
+    enum: ['admin', 'farmer', 'Farm Manager', 'Farm Worker', 'Veterinarian', 'Data Analyst'],
     default: 'farmer',
     index: true
   },
@@ -46,7 +46,21 @@ const UserSchema = new Schema({
     index: true
   },
   lastLogin: { type: Date },
-  profileImageUrl: { type: String }
+  profileImageUrl: { type: String },
+  permissions: {
+    type: [String],
+    default: []
+  },
+  restrictedFarms: {
+    type: [Schema.Types.ObjectId],
+    ref: 'Farm',
+    default: []
+  },
+  restrictedStalls: {
+    type: [Schema.Types.ObjectId],
+    ref: 'Stall',
+    default: []
+  }
 }, {
   timestamps: true
 });
