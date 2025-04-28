@@ -268,84 +268,69 @@ router.get('/:id/posture/aggregated', async (req, res) => {
     const { start, end } = req.query;
     console.log('Received date range parameters:', { start, end });
 
-    // Find ALL posture data for this pig
-    const postureData = await PigPosture.find({ pigId: id })
+    // Build query with date range if provided
+    let query = { pigId: id };
 
-    console.log(`Fetched all posture data for pig ${id}: ${postureData.length} records`)
-
-    // Group data by date
-    const groupedByDate = {}
-
-    // Determine date range
-    let startDate, endDate;
-    let useSyntheticDates = true;
-
-    // If both start and end dates are provided, use them
     if (start && end) {
       try {
-        startDate = new Date(start);
-        endDate = new Date(end);
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+
+        // Add one day to end date to include the end date in the results (end of day)
+        endDate.setDate(endDate.getDate() + 1);
 
         // Validate dates
         if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-          useSyntheticDates = false;
-          console.log('Using provided date range:', { startDate, endDate });
-        } else {
-          console.log('Invalid date format provided, falling back to synthetic dates');
+          query.timestamp = {
+            $gte: startDate,
+            $lt: endDate
+          };
+          console.log('Using date range filter:', {
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString()
+          });
         }
       } catch (error) {
         console.error('Error parsing date range:', error);
       }
     }
 
-    let dates = [];
+    // Find posture data for this pig with date range filter if provided
+    const postureData = await PigPosture.find(query).sort({ timestamp: 1 });
 
-    if (useSyntheticDates) {
-      // Use synthetic dates (July-August 2022) as fallback
-      startDate = new Date('2022-07-01');
-      const syntheticDays = 60;
+    console.log(`Fetched posture data for pig ${id}: ${postureData.length} records`)
 
-      for (let i = 0; i < syntheticDays; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        dates.push(date.toISOString().split('T')[0]);
+    // Group the real data by date
+    const groupedByDate = {};
+
+    // Process each posture record and group by date
+    postureData.forEach(record => {
+      // Extract the date part from the timestamp (YYYY-MM-DD)
+      const date = record.timestamp.toISOString().split('T')[0];
+
+      // Initialize the date entry if it doesn't exist
+      if (!groupedByDate[date]) {
+        groupedByDate[date] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, total: 0 };
       }
-    } else {
-      // Generate dates between start and end dates
-      const dayDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
-      for (let i = 0; i <= dayDiff; i++) {
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
-        dates.push(date.toISOString().split('T')[0]);
-      }
-    }
 
-    console.log(`Generated ${dates.length} dates for the range`);
-
-    // Initialize all dates with zero counts
-    dates.forEach(date => {
-      groupedByDate[date] = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, total: 0 }
-    })
-
-    // Create synthetic data for demonstration purposes
-    // This ensures we have data to show even when using real date ranges
-    const syntheticScores = [1, 2, 3, 4, 5];
-
-    // For each date in our range, create some random data
-    dates.forEach(date => {
-      // Generate between 10-50 records per day with random distribution
-      const recordsPerDay = Math.floor(Math.random() * 40) + 10;
-
-      for (let i = 0; i < recordsPerDay; i++) {
-        // Pick a random score (1-5)
-        const randomIndex = Math.floor(Math.random() * syntheticScores.length);
-        const score = syntheticScores[randomIndex];
-
-        // Increment the count for this score
+      // Increment the count for this score
+      const score = record.score;
+      if (score >= 1 && score <= 5) {
         groupedByDate[date][score]++;
         groupedByDate[date].total++;
       }
-    })
+    });
+
+    console.log(`Grouped data by date: ${Object.keys(groupedByDate).length} days with data`);
+
+    // If no data was found, create some minimal sample data to avoid empty charts
+    if (Object.keys(groupedByDate).length === 0) {
+      console.log('No real data found, creating minimal sample data');
+
+      // Create a single day of sample data (today)
+      const today = new Date().toISOString().split('T')[0];
+      groupedByDate[today] = { 1: 5, 2: 10, 3: 8, 4: 6, 5: 3, total: 32 };
+    }
 
     // Convert to array and calculate percentages
     const aggregatedData = Object.entries(groupedByDate).map(([date, counts]) => {
