@@ -46,7 +46,7 @@ export function CreateUserModal({
       const roleKey = Object.keys(ROLE_TEMPLATES).find(
         (key) => ROLE_TEMPLATES[key as keyof typeof ROLE_TEMPLATES].name === value
       );
-
+      // updated comments
       if (roleKey) {
         const template = ROLE_TEMPLATES[roleKey as keyof typeof ROLE_TEMPLATES];
         setFormData((prev) => ({
@@ -54,6 +54,7 @@ export function CreateUserModal({
           role: value,
           permissions: template.permissions
         }));
+
       } else {
         setFormData((prev) => ({ ...prev, [name]: value }));
       }
