@@ -12,7 +12,7 @@ import { DataTableRowActions } from "./DataTableRowActions"
 const columnHelper = createColumnHelper<Usage>()
 
 export const columns = [
-  
+
   columnHelper.display({
     id: "select",
     header: ({ table }) => (
@@ -50,7 +50,7 @@ export const columns = [
     cell: ({ row }) => {
       const pigId = row.original.owner.replace('PIG-', '')
       return (
-        <Link 
+        <Link
           href={`/pigs/${pigId}`}
           className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
         >
@@ -155,7 +155,7 @@ export const columns = [
 
       return (
         <div className="flex items-center gap-0.5">
-          <span className="w-6">{value}</span>
+          <span className="w-6">{value === 0 ? "--" : value}</span>
           <Indicator number={value} />
         </div>
       )

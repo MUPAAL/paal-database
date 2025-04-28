@@ -17,7 +17,7 @@ import React, { useEffect, useState } from "react"
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/Dialog"
 import { RiAddLine, RiDeleteBin4Fill } from '@remixicon/react'
-import { ArrowUpWideNarrow, GitBranch, MapPinHouse } from "lucide-react"
+import { ArrowUpWideNarrow, MapPinHouse } from "lucide-react"
 import { toast } from "react-hot-toast"; // optional for better feedback UX
 
 
@@ -230,42 +230,42 @@ const FirstPage = ({ formData, onUpdateForm, farms, barns, stalls, onStallClick,
             </DrawerHeader>
             <DrawerBody className="-mx-6 space-y-6 overflow-y-scroll border-t border-gray-200 px-6 dark:border-gray-800">
                 <FormField label="Farms">
-                    <ul role="list" className="mt-2 divide-y divide-gray-200 dark:divide-gray-800">
-                        {farms.map(farm => {
-                            const isSelected = farm._id === selectedFarmId;
-                            return (
-                                <li
-                                    key={farm._id}
-                                    onClick={() => handleSelectFarm(farm._id)}
-                                    className={`flex cursor-pointer items-center justify-between space-x-4 py-2.5 text-sm transition ${isSelected ? "bg-blue-100 dark:bg-blue-900 rounded-md border-blue-500 pl-2" : "hover:bg-gray-100 rounded-md dark:hover:bg-gray-800"}`}
-                                >
-                                    <div className="flex items-center space-x-4 truncate">
-                                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed border-gray-300 bg-white text-xs uppercase text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-500">
-                                            <GitBranch className="size-5" />
-                                        </span>
-                                        <span className="truncate text-gray-700 dark:text-gray-300">{farm.name}</span>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <span className="inline-flex items-center whitespace-nowrap rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                                            {farm.barns?.length || 0} Barns
-                                        </span>
-                                        <Button
-                                            variant="ghost"
-                                            className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300"
-                                            onClick={async (e) => {
-                                                e.stopPropagation();
-                                                await deleteEntity('farms', farm._id);
-                                                refreshData();
-                                            }}
-                                        >
-                                            <RiDeleteBin4Fill className="size-5 shrink-0" />
-                                            <span className="sr-only">Remove {farm.name}</span>
-                                        </Button>
-                                    </div>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                    <div className="flex items-center gap-2">
+                        <div className="flex-grow">
+                            <Select
+                                value={selectedFarmId || ""}
+                                onValueChange={(value: string) => handleSelectFarm(value)}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select Farm" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {farms.map((farm) => (
+                                        <SelectItemExtended
+                                            key={farm._id}
+                                            value={farm._id}
+                                            option={farm.name}
+                                            description={`${farm.barns?.length || 0} Barns`}
+                                        />
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {selectedFarmId && (
+                            <Button
+                                variant="ghost"
+                                className="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 dark:text-gray-500 hover:dark:text-gray-300"
+                                onClick={async () => {
+                                    await deleteEntity('farms', selectedFarmId);
+                                    setSelectedFarmId(null);
+                                    refreshData();
+                                }}
+                            >
+                                <RiDeleteBin4Fill className="size-5 shrink-0" />
+                                <span className="sr-only">Remove farm</span>
+                            </Button>
+                        )}
+                    </div>
 
                     <div className="mt-4 flex w-full items-center space-x-2">
                         {isAddingFarm ? (
