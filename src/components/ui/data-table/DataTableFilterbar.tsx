@@ -125,6 +125,73 @@ export function Filterbar<TData>({ table }: DataTableToolbarProps<TData>) {
     debouncedSetFilterValue(value)
   }
 
+  // Function to export table data to CSV
+  const exportToCSV = () => {
+    try {
+      // Get visible columns (excluding action columns)
+      const visibleColumns = table.getAllColumns()
+        .filter(column =>
+          column.getIsVisible() &&
+          column.id !== 'select' &&
+          column.id !== 'edit'
+        )
+
+      // Get column headers
+      const headers = visibleColumns.map(column => {
+        // Use the display name if available, otherwise use the column ID
+        return column.columnDef.meta?.displayName || column.id
+      })
+
+      // Get all rows data
+      const rows = table.getFilteredRowModel().rows
+
+      // Create CSV content
+      let csvContent = headers.join(',') + '\n'
+
+      // Add rows to CSV
+      rows.forEach(row => {
+        const rowData = visibleColumns.map(column => {
+          const cellValue = row.getValue(column.id)
+
+          // Handle different data types and ensure proper CSV formatting
+          if (cellValue === null || cellValue === undefined) {
+            return ''
+          } else if (typeof cellValue === 'object') {
+            // For objects, convert to string to avoid [object Object]
+            return JSON.stringify(cellValue).replace(/"/g, '""')
+          } else {
+            // For strings that might contain commas, wrap in quotes
+            const stringValue = String(cellValue)
+            return stringValue.includes(',') ? `"${stringValue.replace(/"/g, '""')}"` : stringValue
+          }
+        })
+
+        csvContent += rowData.join(',') + '\n'
+      })
+
+      // Create a blob and download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+
+      // Set link properties
+      link.setAttribute('href', url)
+      link.setAttribute('download', `pig-data-export-${new Date().toISOString().split('T')[0]}.csv`)
+      link.style.visibility = 'hidden'
+
+      // Add to document, click and remove
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      // Clean up the URL object
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error exporting data:', error)
+      alert('Failed to export data. Please try again.')
+    }
+  }
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-x-6">
       <div className="flex w-full flex-col gap-2 sm:w-fit sm:flex-row sm:items-center">
@@ -184,6 +251,7 @@ export function Filterbar<TData>({ table }: DataTableToolbarProps<TData>) {
         </Button>
         <PigDrawer open={isOpen} onOpenChange={setIsOpen} />
         <Button
+          onClick={exportToCSV}
           variant="secondary"
           className="hidden gap-x-2 px-2 py-1.5 text-sm sm:text-xs lg:flex"
         >
