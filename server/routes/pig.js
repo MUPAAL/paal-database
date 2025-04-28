@@ -35,28 +35,28 @@ router.get('/', async (req, res) => {
 
     const transformedPigs = pigs.map(pig => ({
       owner: `PIG-${pig.pigId.toString().padStart(3, '0')}`,
-      status: pig.healthStatus?.status || 'healthy', // Default to healthy if no status
-      costs: pig.age,
+      status: pig.healthStatus?.status || '------', // Use dashes instead of default 'healthy'
+      costs: pig.age || '------', // Use dashes for missing age
       region: pig.currentLocation.stallId?.name
-        ? `Stall ${pig.currentLocation.stallId.name}`
-        : 'Unknown Location',
-      stability: Math.floor(Math.random() * 100),
+        ? `${pig.currentLocation.stallId.name}`
+        : '------',
+      stability: pig.stability || 0, // Use 0 for missing stability (will show as low risk)
       lastEdited: pig.updatedAt
         ? new Date(pig.updatedAt).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
         : new Date().toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          }),
-      breed: pig.breed,
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+      breed: pig.breed || '------', // Use dashes for missing breed
       active: pig.active
     }))
 
@@ -184,7 +184,7 @@ router.get('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Invalid pig id' })
     }
 
-     const pig = await Pig.findOne({ pigId: id })
+    const pig = await Pig.findOne({ pigId: id })
       .populate('currentLocation.farmId')
       .populate('currentLocation.barnId')
       .populate('currentLocation.stallId')
@@ -214,7 +214,7 @@ router.get('/:id/bcs', async (req, res) => {
     //   return res.status(404).json({ error: 'Pig not found' })
     // }
 
-    const bcsData = await PigBCS.find({ pigId: id})
+    const bcsData = await PigBCS.find({ pigId: id })
       .sort({ timestamp: -1 })
       .limit(100)
 
@@ -366,7 +366,7 @@ function calculateDateRange(range) {
   const now = new Date();
   let startDate = new Date();
 
-  switch(range) {
+  switch (range) {
     case '30-days':
       startDate.setDate(now.getDate() - 30);
       break;
@@ -445,8 +445,8 @@ router.put('/:id', async (req, res) => {
       { $set: updates },
       { new: true }
     ).populate('currentLocation.farmId')
-     .populate('currentLocation.barnId')
-     .populate('currentLocation.stallId')
+      .populate('currentLocation.barnId')
+      .populate('currentLocation.stallId')
 
     if (!updatedPig) {
       return res.status(404).json({ error: 'Pig not found' })

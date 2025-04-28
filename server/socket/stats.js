@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const setupStatsEmitter = (io) => {
   // Periodically emit stats
   setInterval(() => emitUpdatedStats(io), 5000);
-  
+
   return emitUpdatedStats.bind(null, io);
 };
 
@@ -114,7 +114,7 @@ const emitUpdatedStats = async (io) => {
         pigHeatStats[item._id] = item.count;
       }
     });
-    
+
     // Pig Fertility aggregation
     const pigFertilityAggregated = await PigFertility.aggregate([
       { $sort: { timestamp: -1 } },
@@ -152,12 +152,12 @@ const emitUpdatedStats = async (io) => {
     // Transform pigs for UI
     const transformedPigs = pigs.map(pig => ({
       owner: `PIG-${pig.pigId.toString().padStart(3, '0')}`,
-      status: pig.healthStatus?.status || 'healthy', // Default to healthy if no status
-      costs: pig.age,
+      status: pig.healthStatus?.status || '------', // Use dashes instead of default 'healthy'
+      costs: pig.age || '------', // Use dashes for missing age
       region: pig.currentLocation.stallId?.name
-        ? `${pig.currentLocation.farmId?.name || "N/A"} => ${pig.currentLocation.barnId?.name || "N/A"} => ${pig.currentLocation.stallId.name}`
-        : 'Unknown Location',
-      stability: pig.stability,
+        ? `${pig.currentLocation.stallId.name}`
+        : '------',
+      stability: pig.stability || 0, // Use 0 for missing stability (will show as low risk)
       lastEdited: pig.updatedAt
         ? new Date(pig.updatedAt).toLocaleDateString('en-GB', {
           day: '2-digit',
@@ -173,7 +173,7 @@ const emitUpdatedStats = async (io) => {
           hour: '2-digit',
           minute: '2-digit'
         }),
-      breed: pig.breed,
+      breed: pig.breed || '------', // Use dashes for missing breed
       active: pig.active
     }));
 
