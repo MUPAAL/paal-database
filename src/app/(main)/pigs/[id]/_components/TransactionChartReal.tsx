@@ -1,13 +1,12 @@
 "use client"
 import { BarChartVariant } from "@/components/BarChartVariantFull"
 import { Tooltip } from "@/components/Tooltip"
-import api from "@/lib/axios"
 import { AvailableChartColorsKeys } from "@/lib/chartUtils"
 import { cx } from "@/lib/utils"
 import { format, isValid, parse } from "date-fns"
 import { InfoIcon } from "lucide-react"
 import { useParams, useSearchParams } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { DateRangeSelector } from "./DateRangeSelector"
 
 type ChartType = "amount" | "category"
@@ -94,7 +93,15 @@ export function TransactionChart({
     },
   }
 
+  // Use a ref to track if we've already fetched the data
+  const dataFetchedRef = useRef(false);
+
   useEffect(() => {
+    // Skip fetching if we've already fetched data and nothing has changed
+    if (dataFetchedRef.current && chartData.length > 0) {
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setIsLoading(true)
@@ -114,14 +121,28 @@ export function TransactionChart({
         }
 
         const queryString = params.toString();
-        const url = `/pigs/${pigId}/posture/aggregated${queryString ? `?${queryString}` : ''}`;
+        // Use the direct endpoint for the aggregated posture data
+        const url = `http://localhost:8080/api/pigs/${pigId}/posture/aggregated${queryString ? `?${queryString}` : ''}`;
         console.log('Fetching posture data with URL:', url);
 
-        const response = await api.get(url)
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        const data = await response.json()
 
-        // Use the data directly from the response - no need to filter again
-        // since the backend is now handling the date filtering
-        let filteredData = response.data
+        // Extract the data and date range from the response
+        let filteredData = Array.isArray(data) ? data : (data.data || [])
+
+        // Store the available date range in a global variable or context
+        if (data.dateRange && !window.pigPostureDateRange) {
+          // Store min and max dates for use in the DateRangeSelector
+          window.pigPostureDateRange = data.dateRange
+          console.log('Available date range:', data.dateRange)
+        }
+
+        // Mark that we've fetched data
+        dataFetchedRef.current = true;
 
         console.log('Date range:', { startDate, endDate })
         console.log('Data count from backend:', filteredData.length)
@@ -294,9 +315,11 @@ export function TransactionChart({
             return (
               <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-md dark:border-gray-800 dark:bg-gray-900">
                 <p className="mb-2 font-medium">{props.label}</p>
-                {props.payload.map((entry, index) => {
+                {props.payload.map((entry: any, index) => {
                   const categoryKey = entry.dataKey as string;
-                  const categoryLabel = type === "amount" ? postureCategoryLabels[categoryKey] || categoryKey : categoryKey;
+                  const categoryLabel = type === "amount" ?
+                    (postureCategoryLabels as any)[categoryKey] || categoryKey :
+                    categoryKey;
                   return (
                     <div key={index} className="flex items-center gap-2">
                       <div

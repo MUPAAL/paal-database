@@ -412,8 +412,19 @@ router.get('/:id/posture/aggregated', async (req, res) => {
 
     console.log(`Aggregated data: ${aggregatedData.length} days of data`)
 
-    // Return the aggregated data
-    res.json(aggregatedData)
+    // Find the min and max dates in the data
+    const dates = aggregatedData.map(item => new Date(item.date).getTime());
+    const minDate = dates.length > 0 ? new Date(Math.min(...dates)).toISOString().split('T')[0] : null;
+    const maxDate = dates.length > 0 ? new Date(Math.max(...dates)).toISOString().split('T')[0] : null;
+
+    // Return the aggregated data with available date range
+    res.json({
+      data: aggregatedData,
+      dateRange: {
+        minDate,
+        maxDate
+      }
+    })
   } catch (error) {
     console.error('Error aggregating posture data:', error)
     res.status(500).json({ error: 'Failed to aggregate posture data' })

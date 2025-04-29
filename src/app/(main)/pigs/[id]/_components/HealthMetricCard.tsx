@@ -4,7 +4,7 @@ import { Badge } from "@/components/Badge"
 import { Card } from "@/components/Card"
 import { ProgressCircle } from "@/components/ProgressCircle_S"
 import api from "@/lib/axios"
-import { ReactNode, useEffect, useState } from "react"
+import { ReactNode, useEffect, useRef, useState } from "react"
 
 interface HealthMetricCardProps {
   title: string
@@ -33,7 +33,15 @@ export function HealthMetricCard({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Use a ref to track if we've already fetched the data
+  const dataFetchedRef = useRef(false);
+
   useEffect(() => {
+    // Skip fetching if we've already fetched data
+    if (dataFetchedRef.current && data) {
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setIsLoading(true)
@@ -42,12 +50,28 @@ export function HealthMetricCard({
         // Check if this is the posture endpoint which is having issues
         if (endpoint.includes('/posture/latest')) {
           try {
-            // Use the aggregated endpoint to get the most recent data
-            const response = await api.get(endpoint.replace('/latest', '/aggregated'))
+            // Use the direct aggregated endpoint to get the most recent data
+            const response = await fetch(`http://localhost:8080/api/pigs/${endpoint.split('/')[2]}/posture/aggregated`)
 
-            if (response.data && response.data.length > 0) {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`)
+            }
+
+            const responseData = await response.json()
+            const aggregatedData = responseData.data || responseData
+
+            // Store the available date range in a global variable
+            if (responseData.dateRange && !window.pigPostureDateRange) {
+              window.pigPostureDateRange = responseData.dateRange
+              console.log('Available date range from HealthMetricCard:', responseData.dateRange)
+            }
+
+            // Mark that we've fetched data
+            dataFetchedRef.current = true;
+
+            if (aggregatedData && aggregatedData.length > 0) {
               // Sort by date to get the most recent day
-              const sortedData = [...response.data].sort((a, b) =>
+              const sortedData = [...aggregatedData].sort((a, b) =>
                 new Date(b.date).getTime() - new Date(a.date).getTime()
               )
 
