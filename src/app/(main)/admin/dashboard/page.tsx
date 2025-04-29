@@ -65,6 +65,7 @@ export default function AdminDashboard() {
     lastUpdated: new Date().toISOString(),
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
@@ -74,6 +75,10 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
+        setShowSkeleton(true);
+
+        // Record the start time to ensure minimum loading duration
+        const startTime = Date.now();
 
         // Get token and user from localStorage
         const token = localStorage.getItem("token");
@@ -151,11 +156,27 @@ export default function AdminDashboard() {
           lastUpdated: new Date().toISOString(),
         });
 
+        // Calculate elapsed time and ensure minimum loading time of 1 second
+        const elapsedTime = Date.now() - startTime;
+        const minimumLoadingTime = 1000; // 1 second in milliseconds
+
+        if (elapsedTime < minimumLoadingTime) {
+          // If less than minimum time has passed, wait for the remainder
+          const remainingTime = minimumLoadingTime - elapsedTime;
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+
         setIsLoading(false);
+
+        // Add a small delay before hiding the skeleton to ensure smooth transition
+        setTimeout(() => {
+          setShowSkeleton(false);
+        }, 50);
       } catch (err: any) {
         console.error("Error fetching stats:", err);
         setError(err.response?.data?.error || "Failed to fetch dashboard stats");
         setIsLoading(false);
+        setShowSkeleton(false);
 
         // If unauthorized, redirect to login
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -170,7 +191,7 @@ export default function AdminDashboard() {
   }, [router]);
 
   // Loading state
-  if (isLoading) {
+  if (showSkeleton) {
     return <DashboardSkeleton />;
   }
 

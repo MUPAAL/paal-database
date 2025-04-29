@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import BackupRestoreSection from "./components/BackupRestoreSection";
 import MaintenanceSection from "./components/MaintenanceSection";
 import SystemLogsSection from "./components/SystemLogsSection";
+import SystemSkeleton from "./components/SystemSkeleton";
 
 type SystemMetrics = {
   server: {
@@ -48,6 +49,7 @@ type SystemMetrics = {
 export default function SystemPage() {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
@@ -57,6 +59,10 @@ export default function SystemPage() {
     const fetchSystemMetrics = async () => {
       try {
         setIsLoading(true);
+        setShowSkeleton(true);
+
+        // Record the start time to ensure minimum loading duration
+        const startTime = Date.now();
 
         const user = localStorage.getItem("user");
         const token = localStorage.getItem("token");
@@ -85,11 +91,28 @@ export default function SystemPage() {
         );
 
         setMetrics(response.data);
+
+        // Calculate elapsed time and ensure minimum loading time of 1 second
+        const elapsedTime = Date.now() - startTime;
+        const minimumLoadingTime = 1000; // 1 second in milliseconds
+
+        if (elapsedTime < minimumLoadingTime) {
+          // If less than minimum time has passed, wait for the remainder
+          const remainingTime = minimumLoadingTime - elapsedTime;
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+
         setIsLoading(false);
+
+        // Add a small delay before hiding the skeleton to ensure smooth transition
+        setTimeout(() => {
+          setShowSkeleton(false);
+        }, 50);
       } catch (err: any) {
         console.error("Error fetching system metrics:", err);
         setError(err.response?.data?.error || "Failed to fetch system metrics");
         setIsLoading(false);
+        setShowSkeleton(false);
 
         // If unauthorized, redirect to login
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -106,6 +129,10 @@ export default function SystemPage() {
   const refreshStatus = async () => {
     try {
       setIsLoading(true);
+      setShowSkeleton(true);
+
+      // Record the start time to ensure minimum loading duration
+      const startTime = Date.now();
 
       const token = localStorage.getItem("token");
 
@@ -121,11 +148,28 @@ export default function SystemPage() {
       );
 
       setMetrics(response.data);
+
+      // Calculate elapsed time and ensure minimum loading time of 1 second
+      const elapsedTime = Date.now() - startTime;
+      const minimumLoadingTime = 1000; // 1 second in milliseconds
+
+      if (elapsedTime < minimumLoadingTime) {
+        // If less than minimum time has passed, wait for the remainder
+        const remainingTime = minimumLoadingTime - elapsedTime;
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+
       setIsLoading(false);
+
+      // Add a small delay before hiding the skeleton to ensure smooth transition
+      setTimeout(() => {
+        setShowSkeleton(false);
+      }, 50);
     } catch (err: any) {
       console.error("Error refreshing system metrics:", err);
       setError(err.response?.data?.error || "Failed to refresh system metrics");
       setIsLoading(false);
+      setShowSkeleton(false);
     }
   };
 
@@ -164,14 +208,8 @@ export default function SystemPage() {
     return `${days}d ${hours}h ${minutes}m`;
   };
 
-  if (isLoading) {
-    return (
-      <div className="grid gap-4">
-        <Card className="p-6">
-          <h2 className="text-xl font-bold mb-4">Loading System Status...</h2>
-        </Card>
-      </div>
-    );
+  if (showSkeleton) {
+    return <SystemSkeleton />;
   }
 
   if (error) {
@@ -187,7 +225,7 @@ export default function SystemPage() {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 animate-fade-in">
       <Card className="p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold">System Status</h2>

@@ -92,7 +92,7 @@ const config: Config = {
 				}
 			},
 			animation: {
-				'fade-in': 'fadeIn 500ms ease-in-out',
+				'fade-in': 'fadeIn 300ms ease-in-out',
 				hide: 'hide 150ms cubic-bezier(0.16, 1, 0.3, 1)',
 				slideDownAndFade: 'slideDownAndFade 150ms cubic-bezier(0.16, 1, 0.3, 1)',
 				slideLeftAndFade: 'slideLeftAndFade 150ms cubic-bezier(0.16, 1, 0.3, 1)',

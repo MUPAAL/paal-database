@@ -13,6 +13,7 @@ import { CreateUserModal } from "../components/CreateUserModal";
 import { EditUserModal } from "../components/EditUserModal";
 import { ManagePermissionsModal } from "../components/ManagePermissionsModal";
 import { ManageRestrictionsModal } from "../components/ManageRestrictionsModal";
+import UsersSkeleton from "./components/UsersSkeleton";
 
 type Farm = {
   _id: string;
@@ -31,6 +32,7 @@ export default function UsersPage() {
   const [farms, setFarms] = useState<Farm[]>([]);
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -47,6 +49,11 @@ export default function UsersPage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        setShowSkeleton(true);
+
+        // Record the start time to ensure minimum loading duration
+        const startTime = Date.now();
+
         const token = localStorage.getItem("token");
         const user = localStorage.getItem("user");
 
@@ -101,11 +108,28 @@ export default function UsersPage() {
         setUsers(enhancedUsers);
         setFarms(farmsResponse.data);
         setStalls(stallsResponse.data || []);
+
+        // Calculate elapsed time and ensure minimum loading time of 1 second
+        const elapsedTime = Date.now() - startTime;
+        const minimumLoadingTime = 1000; // 1 second in milliseconds
+
+        if (elapsedTime < minimumLoadingTime) {
+          // If less than minimum time has passed, wait for the remainder
+          const remainingTime = minimumLoadingTime - elapsedTime;
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+
         setIsLoading(false);
+
+        // Add a small delay before hiding the skeleton to ensure smooth transition
+        setTimeout(() => {
+          setShowSkeleton(false);
+        }, 50);
       } catch (err: any) {
         console.error("Error fetching data:", err);
         setError(err.response?.data?.error || "Failed to fetch data");
         setIsLoading(false);
+        setShowSkeleton(false);
 
         // If unauthorized, redirect to login
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -543,22 +567,8 @@ export default function UsersPage() {
   };
 
   // Loading state
-  if (isLoading) {
-    return (
-      <section aria-labelledby="loading-state">
-        <div className="bg-white dark:bg-gray-950 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent mb-4"></div>
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-50 mb-2">
-              Loading Users...
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Please wait while we load the data...
-            </p>
-          </div>
-        </div>
-      </section>
-    );
+  if (showSkeleton) {
+    return <UsersSkeleton />;
   }
 
   // Error state
@@ -579,7 +589,7 @@ export default function UsersPage() {
 
   // Main content
   return (
-    <>
+    <div className="animate-fade-in">
       <h1 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50">
         User Management
       </h1>
@@ -665,6 +675,6 @@ export default function UsersPage() {
           onSave={handleSaveRestrictions}
         />
       )}
-    </>
+    </div>
   );
 }

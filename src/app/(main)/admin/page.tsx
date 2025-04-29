@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import DashboardSkeleton from "./dashboard/components/DashboardSkeleton";
 
 export default function AdminRedirect() {
   const router = useRouter();
@@ -11,8 +12,8 @@ export default function AdminRedirect() {
   }, [router]);
 
   return (
-    <div className="p-4">
-      <p>Redirecting to dashboard...</p>
-    </div>
+    <>
+      <DashboardSkeleton />
+    </>
   );
 }

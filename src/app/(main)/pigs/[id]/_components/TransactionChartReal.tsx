@@ -8,6 +8,7 @@ import { format, isValid, parse } from "date-fns"
 import { InfoIcon } from "lucide-react"
 import { useParams, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
+import { DateRangeSelector } from "./DateRangeSelector"
 
 type ChartType = "amount" | "category"
 
@@ -245,7 +246,7 @@ export function TransactionChart({
 
   return (
     <div className={cx(className, "w-full")}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex gap-2">
           <h2
             id={`${type}-chart-title`}
@@ -257,6 +258,11 @@ export function TransactionChart({
             <InfoIcon className="size-4 text-gray-600 dark:text-gray-400" />
           </Tooltip>
         </div>
+        {type === "amount" && (
+          <div className="flex-shrink-0">
+            <DateRangeSelector />
+          </div>
+        )}
       </div>
 
       {isLoading ? (

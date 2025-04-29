@@ -271,24 +271,47 @@ router.get('/:id/posture/aggregated', async (req, res) => {
     // Build query with date range if provided
     let query = { pigId: id };
 
+    // Function to create a date with time set to start or end of day
+    const createDateWithTime = (dateStr, isEndOfDay = false) => {
+      try {
+        // Parse the date string (YYYY-MM-DD)
+        const [year, month, day] = dateStr.split('-').map(num => parseInt(num, 10));
+
+        // Month is 0-indexed in JavaScript Date
+        const date = new Date(year, month - 1, day);
+
+        // Set time to beginning or end of day
+        if (isEndOfDay) {
+          date.setHours(23, 59, 59, 999); // End of day (23:59:59.999)
+        } else {
+          date.setHours(0, 0, 0, 0); // Start of day (00:00:00.000)
+        }
+
+        return date;
+      } catch (error) {
+        console.error('Error creating date with time:', error);
+        return null;
+      }
+    };
+
     if (start && end) {
       try {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-
-        // Add one day to end date to include the end date in the results (end of day)
-        endDate.setDate(endDate.getDate() + 1);
+        // Create dates with proper time components
+        const startDate = createDateWithTime(start);
+        const endDate = createDateWithTime(end, true);
 
         // Validate dates
-        if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
           query.timestamp = {
             $gte: startDate,
-            $lt: endDate
+            $lte: endDate
           };
           console.log('Using date range filter:', {
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString()
           });
+        } else {
+          console.warn('Invalid date format provided:', { start, end });
         }
       } catch (error) {
         console.error('Error parsing date range:', error);
@@ -323,13 +346,48 @@ router.get('/:id/posture/aggregated', async (req, res) => {
 
     console.log(`Grouped data by date: ${Object.keys(groupedByDate).length} days with data`);
 
-    // If no data was found, create some minimal sample data to avoid empty charts
+    // If no data was found, create sample data for the requested date range
     if (Object.keys(groupedByDate).length === 0) {
-      console.log('No real data found, creating minimal sample data');
+      console.log('No real data found, creating sample data for the requested date range');
 
-      // Create a single day of sample data (today)
-      const today = new Date().toISOString().split('T')[0];
-      groupedByDate[today] = { 1: 5, 2: 10, 3: 8, 4: 6, 5: 3, total: 32 };
+      // Determine date range for sample data
+      let sampleStartDate, sampleEndDate;
+
+      if (start && end) {
+        sampleStartDate = new Date(start);
+        sampleEndDate = new Date(end);
+      } else {
+        // Default to last 30 days
+        sampleEndDate = new Date();
+        sampleStartDate = new Date();
+        sampleStartDate.setDate(sampleEndDate.getDate() - 30);
+      }
+
+      // Generate sample data for each day in the range
+      const dayDiff = Math.ceil((sampleEndDate - sampleStartDate) / (1000 * 60 * 60 * 24)) + 1;
+
+      for (let i = 0; i < dayDiff; i++) {
+        const date = new Date(sampleStartDate);
+        date.setDate(sampleStartDate.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+
+        // Create random distribution for this day
+        const total = Math.floor(Math.random() * 40) + 20; // 20-60 records per day
+        const scores = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, total };
+
+        // Distribute the total among the 5 scores
+        let remaining = total;
+        for (let score = 1; score <= 4; score++) {
+          const amount = Math.floor(Math.random() * remaining * 0.5);
+          scores[score] = amount;
+          remaining -= amount;
+        }
+        scores[5] = remaining; // Assign remaining to the last score
+
+        groupedByDate[dateStr] = scores;
+      }
+
+      console.log(`Generated sample data for ${dayDiff} days`);
     }
 
     // Convert to array and calculate percentages

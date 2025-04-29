@@ -49,12 +49,11 @@ export default function AdminLayout({
 
   if (isLoading) {
     return (
-      <div className="p-4 sm:px-6 sm:pb-10 sm:pt-10 lg:px-10 lg:pt-7">
-        <h1 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50">
-          Admin Dashboard
-        </h1>
-        <div className="mt-6">Loading...</div>
-      </div>
+      <>
+        <div className="flex items-center justify-center p-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent"></div>
+        </div>
+      </>
     )
   }
 

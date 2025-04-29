@@ -15,7 +15,6 @@ import {
   Filter,
   Home,
   LayoutGrid,
-  Loader2,
   PenSquare,
   Plus,
   Search,
@@ -26,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import CreateFarmModal from "../CreateFarmModal";
 import FarmDetailsModal from "../FarmDetailsModal";
+import UnifiedFarmsSkeleton from "./components/UnifiedFarmsSkeleton";
 
 // Define types for our data structures
 type Farm = {
@@ -71,6 +71,7 @@ export default function UnifiedFarmsPage() {
   const [barns, setBarns] = useState<Barn[]>([]);
   const [stalls, setStalls] = useState<Stall[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Farm management state
@@ -92,6 +93,11 @@ export default function UnifiedFarmsPage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        setShowSkeleton(true);
+
+        // Record the start time to ensure minimum loading duration
+        const startTime = Date.now();
+
         const token = localStorage.getItem("token");
         const user = localStorage.getItem("user");
 
@@ -308,7 +314,23 @@ export default function UnifiedFarmsPage() {
         setFarms(processedFarms);
         setBarns(barnsData);
         setStalls(stallsData);
+
+        // Calculate elapsed time and ensure minimum loading time of 1 second
+        const elapsedTime = Date.now() - startTime;
+        const minimumLoadingTime = 1000; // 1 second in milliseconds
+
+        if (elapsedTime < minimumLoadingTime) {
+          // If less than minimum time has passed, wait for the remainder
+          const remainingTime = minimumLoadingTime - elapsedTime;
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
+        }
+
         setIsLoading(false);
+
+        // Add a small delay before hiding the skeleton to ensure smooth transition
+        setTimeout(() => {
+          setShowSkeleton(false);
+        }, 50);
       } catch (err: any) {
         console.error("Error fetching data:", err);
 
@@ -323,6 +345,7 @@ export default function UnifiedFarmsPage() {
 
         setError(errorMessage);
         setIsLoading(false);
+        setShowSkeleton(false);
 
         // If unauthorized, redirect to login
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -357,6 +380,11 @@ export default function UnifiedFarmsPage() {
   const handleFarmUpdated = async () => {
     try {
       setIsLoading(true);
+      setShowSkeleton(true);
+
+      // Record the start time to ensure minimum loading duration
+      const startTime = Date.now();
+
       const response = await api.get("/api/farms");
 
       // Process the response data
@@ -411,11 +439,28 @@ export default function UnifiedFarmsPage() {
       setFarms(processedFarms);
       setBarns(barnsData);
       setStalls(stallsData);
+
+      // Calculate elapsed time and ensure minimum loading time of 1 second
+      const elapsedTime = Date.now() - startTime;
+      const minimumLoadingTime = 1000; // 1 second in milliseconds
+
+      if (elapsedTime < minimumLoadingTime) {
+        // If less than minimum time has passed, wait for the remainder
+        const remainingTime = minimumLoadingTime - elapsedTime;
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
+
       setIsLoading(false);
+
+      // Add a small delay before hiding the skeleton to ensure smooth transition
+      setTimeout(() => {
+        setShowSkeleton(false);
+      }, 50);
     } catch (err: any) {
       console.error("Error refreshing farms:", err);
       setError(err.response?.data?.error || "Failed to refresh farms");
       setIsLoading(false);
+      setShowSkeleton(false);
     }
   };
 
@@ -481,25 +526,8 @@ export default function UnifiedFarmsPage() {
   const totalPigs = farms.reduce((sum, farm) => sum + (farm.pigCount || 0), 0);
 
   // Loading state
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center mb-6">
-          <h1 className="text-2xl font-bold">Farm Management</h1>
-        </div>
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-10 w-10 animate-spin text-indigo-600 mb-4" />
-            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-50 mb-2">
-              Loading Farms Data...
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Please wait while we load the data...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+  if (showSkeleton) {
+    return <UnifiedFarmsSkeleton />;
   }
 
   // Error state
