@@ -346,48 +346,19 @@ router.get('/:id/posture/aggregated', async (req, res) => {
 
     console.log(`Grouped data by date: ${Object.keys(groupedByDate).length} days with data`);
 
-    // If no data was found, create sample data for the requested date range
+    // If no data was found, return an empty array with date range info
     if (Object.keys(groupedByDate).length === 0) {
-      console.log('No real data found, creating sample data for the requested date range');
+      console.log('No real data found for the requested date range');
 
-      // Determine date range for sample data
-      let sampleStartDate, sampleEndDate;
-
-      if (start && end) {
-        sampleStartDate = new Date(start);
-        sampleEndDate = new Date(end);
-      } else {
-        // Default to last 30 days
-        sampleEndDate = new Date();
-        sampleStartDate = new Date();
-        sampleStartDate.setDate(sampleEndDate.getDate() - 30);
-      }
-
-      // Generate sample data for each day in the range
-      const dayDiff = Math.ceil((sampleEndDate - sampleStartDate) / (1000 * 60 * 60 * 24)) + 1;
-
-      for (let i = 0; i < dayDiff; i++) {
-        const date = new Date(sampleStartDate);
-        date.setDate(sampleStartDate.getDate() + i);
-        const dateStr = date.toISOString().split('T')[0];
-
-        // Create random distribution for this day
-        const total = Math.floor(Math.random() * 40) + 20; // 20-60 records per day
-        const scores = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, total };
-
-        // Distribute the total among the 5 scores
-        let remaining = total;
-        for (let score = 1; score <= 4; score++) {
-          const amount = Math.floor(Math.random() * remaining * 0.5);
-          scores[score] = amount;
-          remaining -= amount;
-        }
-        scores[5] = remaining; // Assign remaining to the last score
-
-        groupedByDate[dateStr] = scores;
-      }
-
-      console.log(`Generated sample data for ${dayDiff} days`);
+      // Return empty data with date range info
+      return res.json({
+        data: [],
+        dateRange: {
+          minDate: start || null,
+          maxDate: end || null
+        },
+        message: "No posture data available for this pig in the specified date range"
+      });
     }
 
     // Convert to array and calculate percentages
@@ -439,19 +410,70 @@ router.get('/:id/posture/latest', async (req, res) => {
       return res.status(400).json({ error: 'Invalid pig id' })
     }
 
-    // Find the most recent posture data for this pig
-    const latestPosture = await PigPosture.findOne({ pigId: id })
-      .sort({ timestamp: -1 })
-      .limit(1)
+    // Get the most recent day's data
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-    if (!latestPosture) {
+    // Find all posture data from the most recent day with data
+    const recentPostures = await PigPosture.find({ pigId: id })
+      .sort({ timestamp: -1 })
+      .limit(100) // Get enough records to find the most recent day
+
+    if (!recentPostures || recentPostures.length === 0) {
       return res.status(404).json({ error: 'No posture data found for this pig' })
+    }
+
+    // Group by date to find the most recent day with data
+    const posturesByDate = {}
+    recentPostures.forEach(record => {
+      const dateStr = record.timestamp.toISOString().split('T')[0]
+      if (!posturesByDate[dateStr]) {
+        posturesByDate[dateStr] = []
+      }
+      posturesByDate[dateStr].push(record)
+    })
+
+    // Get the most recent date
+    const dates = Object.keys(posturesByDate).sort().reverse()
+    if (dates.length === 0) {
+      return res.status(404).json({ error: 'No posture data found for this pig' })
+    }
+
+    const mostRecentDate = dates[0]
+    const mostRecentPostures = posturesByDate[mostRecentDate]
+
+    // Find the most common posture score for this day
+    const scoreCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+    mostRecentPostures.forEach(record => {
+      if (record.score >= 1 && record.score <= 5) {
+        scoreCounts[record.score]++
+      }
+    })
+
+    // Find the most common score
+    let mostCommonScore = 1
+    let highestCount = 0
+    for (let score = 1; score <= 5; score++) {
+      if (scoreCounts[score] > highestCount) {
+        highestCount = scoreCounts[score]
+        mostCommonScore = score
+      }
+    }
+
+    // Create a response with the most common posture and the date
+    const latestPosture = {
+      pigId: id,
+      score: mostCommonScore,
+      timestamp: new Date(mostRecentDate),
+      counts: scoreCounts,
+      totalRecords: mostRecentPostures.length,
+      date: mostRecentDate
     }
 
     // Log the data for debugging
     console.log('Latest posture data:', JSON.stringify(latestPosture))
 
-    // Return the raw data without any transformation
+    // Return the processed data
     res.json(latestPosture)
   } catch (error) {
     console.error('Error fetching latest posture data:', error)

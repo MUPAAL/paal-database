@@ -4,6 +4,7 @@ import { Badge } from "@/components/Badge"
 import { Card } from "@/components/Card"
 import { ProgressCircle } from "@/components/ProgressCircle_S"
 import api from "@/lib/axios"
+import { useSearchParams } from "next/navigation"
 import { ReactNode, useEffect, useRef, useState } from "react"
 
 interface HealthMetricCardProps {
@@ -36,6 +37,20 @@ export function HealthMetricCard({
   // Use a ref to track if we've already fetched the data
   const dataFetchedRef = useRef(false);
 
+  // Get search params
+  const searchParams = useSearchParams();
+
+  // Reset the dataFetchedRef when the search params change (date range)
+  useEffect(() => {
+    const startParam = searchParams.get("start");
+    const endParam = searchParams.get("end");
+
+    // If the date range changes, reset the dataFetchedRef
+    if (startParam || endParam) {
+      dataFetchedRef.current = false;
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     // Skip fetching if we've already fetched data
     if (dataFetchedRef.current && data) {
@@ -47,69 +62,23 @@ export function HealthMetricCard({
         setIsLoading(true)
         setError(null)
 
-        // Check if this is the posture endpoint which is having issues
-        if (endpoint.includes('/posture/latest')) {
-          try {
-            // Use the direct aggregated endpoint to get the most recent data
-            const response = await fetch(`http://localhost:8080/api/pigs/${endpoint.split('/')[2]}/posture/aggregated`)
-
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            const responseData = await response.json()
-            const aggregatedData = responseData.data || responseData
-
-            // Store the available date range in a global variable
-            if (responseData.dateRange && !window.pigPostureDateRange) {
-              window.pigPostureDateRange = responseData.dateRange
-              console.log('Available date range from HealthMetricCard:', responseData.dateRange)
-            }
-
-            // Mark that we've fetched data
-            dataFetchedRef.current = true;
-
-            if (aggregatedData && aggregatedData.length > 0) {
-              // Sort by date to get the most recent day
-              const sortedData = [...aggregatedData].sort((a, b) =>
-                new Date(b.date).getTime() - new Date(a.date).getTime()
-              )
-
-              // Get the most recent day's data
-              const latestDay = sortedData[0]
-
-              // Create a mock posture record with the most common posture of the day
-              let mostCommonScore = 1
-              let highestCount = 0
-
-              for (let score = 1; score <= 5; score++) {
-                const count = latestDay.counts[score] || 0
-                if (count > highestCount) {
-                  highestCount = count
-                  mostCommonScore = score
-                }
-              }
-
-              // Create a mock record for the card
-              const mockRecord = {
-                _id: 'latest',
-                pigId: parseInt(endpoint.split('/')[2]),
-                timestamp: new Date(latestDay.date).toISOString(),
-                score: mostCommonScore
-              }
-
-              setData(mockRecord)
-            } else {
-              setError('No posture data available')
-            }
-          } catch (postureError) {
-            console.error(`Error fetching posture data:`, postureError)
-            setError('Failed to fetch posture data')
-          }
-        } else {
-          // For other endpoints, use as normal
+        // For all endpoints, use the API directly
+        try {
           const response = await api.get(endpoint)
+
+          // Store the available date range in a global variable if it's the posture endpoint
+          if (endpoint.includes('/posture/') && response.data.dateRange && !window.pigPostureDateRange) {
+            window.pigPostureDateRange = response.data.dateRange
+            console.log('Available date range from HealthMetricCard:', response.data.dateRange)
+          }
+
+          // Mark that we've fetched data
+          dataFetchedRef.current = true;
+
           setData(response.data)
+        } catch (error) {
+          console.error(`Error fetching data from ${endpoint}:`, error)
+          setError(`Failed to fetch data from ${endpoint}`)
         }
       } catch (error) {
         console.error(`Error fetching ${title} data:`, error)

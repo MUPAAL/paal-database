@@ -6,8 +6,8 @@ import { cx } from "@/lib/utils"
 import { format, isValid, parse } from "date-fns"
 import { InfoIcon } from "lucide-react"
 import { useParams, useSearchParams } from "next/navigation"
-import { useEffect, useMemo, useRef, useState } from "react"
-import { DateRangeSelector } from "./DateRangeSelector"
+import { useEffect, useMemo, useState } from "react"
+import { DateRangeSelectorWithApply } from "./DateRangeSelectorWithApply"
 
 type ChartType = "amount" | "category"
 
@@ -95,6 +95,11 @@ export function TransactionChart({
 
   // Use a ref to track if we've already fetched the data
   const dataFetchedRef = useRef(false);
+
+  // Reset the dataFetchedRef when the date range changes
+  useEffect(() => {
+    dataFetchedRef.current = false;
+  }, [startDate, endDate]);
 
   useEffect(() => {
     // Skip fetching if we've already fetched data and nothing has changed
@@ -281,7 +286,7 @@ export function TransactionChart({
         </div>
         {type === "amount" && (
           <div className="flex-shrink-0">
-            <DateRangeSelector />
+            <DateRangeSelectorWithApply />
           </div>
         )}
       </div>

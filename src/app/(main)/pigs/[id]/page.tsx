@@ -14,8 +14,7 @@ import { EditPigDrawer } from "./_components/EditPigDrawer"
 import { HealthMetricCard } from "./_components/HealthMetricCard"
 import { HealthStatusCard } from "./_components/HealthStatusCard"
 import { LineChart } from "./_components/LineChartReal"
-import { NewCalendarDateRange } from "./_components/NewCalendarDateRange"
-import { TransactionChart } from "./_components/TransactionChartReal"
+import { TransactionChart } from "./_components/TransactionChartSimple"
 
 interface PigData {
   _id: string;  // The MongoDB ObjectId as a string
@@ -446,8 +445,16 @@ export default function PigDashboard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center">
-          <NewCalendarDateRange />
+        <div className="flex items-center gap-2">
+          <Button variant="primary" onClick={() => setAddHealthRecordOpen(true)}>
+            Add Health Record
+          </Button>
+          <Button variant="light" onClick={() => setEditPigOpen(true)}>
+            Edit Pig
+          </Button>
+          <Button variant="light" onClick={handlePrintReport}>
+            Print Report
+          </Button>
         </div>
       </div>
 
