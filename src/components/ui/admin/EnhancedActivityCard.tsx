@@ -20,7 +20,7 @@ const getIconContainerClass = (color: string = "blue") => {
     yellow: "bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/40 dark:to-yellow-800/60",
     indigo: "bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-800/60",
   };
-  return `p-3 rounded-xl shadow-md ${classes[color] || classes.blue}`;
+  return `p-3 rounded-xl ${classes[color] || classes.blue}`;
 };
 
 // Helper function to get icon class based on color

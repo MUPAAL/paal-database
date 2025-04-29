@@ -32,7 +32,7 @@ export default function DashboardSkeleton() {
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Active and inactive users</p>
                 </div>
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/60 p-3 rounded-xl shadow-md">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/60 p-3 rounded-xl">
                   <Users className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                 </div>
               </div>
@@ -89,7 +89,7 @@ export default function DashboardSkeleton() {
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Active and inactive farms</p>
                 </div>
-                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-800/60 p-3 rounded-xl shadow-md">
+                <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-800/60 p-3 rounded-xl">
                   <Building2 className="h-6 w-6 text-green-600 dark:text-green-300" />
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function DashboardSkeleton() {
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Server performance metrics</p>
                 </div>
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/60 p-3 rounded-xl shadow-md">
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/60 p-3 rounded-xl">
                   <Server className="h-6 w-6 text-purple-600 dark:text-purple-300" />
                 </div>
               </div>
@@ -225,7 +225,7 @@ export default function DashboardSkeleton() {
                   </div>
                   <p className="text-xs text-gray-500 mt-1">User and system events</p>
                 </div>
-                <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/40 dark:to-orange-800/60 p-3 rounded-xl shadow-md">
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/40 dark:to-orange-800/60 p-3 rounded-xl">
                   <Activity className="h-6 w-6 text-orange-600 dark:text-orange-300" />
                 </div>
               </div>
@@ -285,7 +285,7 @@ export default function DashboardSkeleton() {
         <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {/* Users Action Skeleton */}
           <div className="flex flex-col p-5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 shadow-sm cursor-pointer">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/60 p-3 rounded-xl shadow-md mb-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/40 dark:to-blue-800/60 p-3 rounded-xl mb-4">
               <Users className="h-6 w-6 text-blue-600 dark:text-blue-300" />
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-50 text-lg">Manage Users</h3>
@@ -300,7 +300,7 @@ export default function DashboardSkeleton() {
 
           {/* Farms Action Skeleton */}
           <div className="flex flex-col p-5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 shadow-sm cursor-pointer">
-            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-800/60 p-3 rounded-xl shadow-md mb-4">
+            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/40 dark:to-green-800/60 p-3 rounded-xl mb-4">
               <Building2 className="h-6 w-6 text-green-600 dark:text-green-300" />
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-50 text-lg">Manage Farms</h3>
@@ -315,7 +315,7 @@ export default function DashboardSkeleton() {
 
           {/* System Action Skeleton */}
           <div className="flex flex-col p-5 border border-gray-200 dark:border-gray-800 rounded-xl bg-white dark:bg-gray-900 shadow-sm cursor-pointer">
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/60 p-3 rounded-xl shadow-md mb-4">
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/40 dark:to-purple-800/60 p-3 rounded-xl mb-4">
               <Server className="h-6 w-6 text-purple-600 dark:text-purple-300" />
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-50 text-lg">System Settings</h3>
@@ -352,7 +352,7 @@ export default function DashboardSkeleton() {
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">Recent activity across the platform</p>
               </div>
-              <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/40 dark:to-orange-800/60 p-3 rounded-xl shadow-md">
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/40 dark:to-orange-800/60 p-3 rounded-xl">
                 <Activity className="h-6 w-6 text-orange-600 dark:text-orange-300" />
               </div>
             </div>
