@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from "@/components/Popover"
 import { cn } from "@/lib/utils"
-import { format } from "date-fns"
+import { format, isValid } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -80,13 +80,43 @@ export function DateRangeSelectorSimple() {
   const handleApply = () => {
     if (tempDate?.from && tempDate?.to) {
       setDate(tempDate)
-      
-      // Update URL with new date range
+
+      // Ensure dates are valid
+      if (!isValid(tempDate.from) || !isValid(tempDate.to)) {
+        console.error("Invalid date selected:", tempDate);
+        return;
+      }
+
+      // Format dates for URL parameters - YYYY-MM-DD format
+      const startFormatted = format(tempDate.from, "yyyy-MM-dd")
+      const endFormatted = format(tempDate.to, "yyyy-MM-dd")
+
+      console.log("Applying new date range:", {
+        start: startFormatted,
+        end: endFormatted
+      })
+
+      // Update URL with new date range - this will trigger a data refresh
       const params = new URLSearchParams(searchParams.toString())
-      params.set("start", format(tempDate.from, "yyyy-MM-dd"))
-      params.set("end", format(tempDate.to, "yyyy-MM-dd"))
-      router.push(`${pathname}?${params.toString()}`)
-      
+
+      // Clear any existing parameters to avoid conflicts
+      Array.from(params.keys()).forEach(key => {
+        if (key === "start" || key === "end") {
+          params.delete(key);
+        }
+      });
+
+      // Add the new date parameters
+      params.set("start", startFormatted)
+      params.set("end", endFormatted)
+
+      // Use router.push to update the URL and trigger a data refresh
+      const newUrl = `${pathname}?${params.toString()}`;
+      console.log("Navigating to:", newUrl);
+
+      // Force a hard refresh to ensure the data is updated
+      window.location.href = newUrl;
+
       // Close the popover
       setOpen(false)
     }
@@ -150,8 +180,8 @@ export function DateRangeSelectorSimple() {
               Available data: {availableDateRange.minDate?.toLocaleDateString()} - {availableDateRange.maxDate?.toLocaleDateString()}
             </div>
             <div className="flex justify-end gap-2 p-2 border-t border-gray-200">
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 onClick={() => {
                   setTempDate(date)
                   setOpen(false)
