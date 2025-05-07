@@ -6,7 +6,7 @@ import { cx } from "@/lib/utils"
 import { format, isValid, parse } from "date-fns"
 import { InfoIcon } from "lucide-react"
 import { useParams, useSearchParams } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { DateRangeSelectorWithApply } from "./DateRangeSelectorWithApply"
 
 type ChartType = "amount" | "category"

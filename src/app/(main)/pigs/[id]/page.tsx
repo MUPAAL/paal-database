@@ -445,7 +445,8 @@ export default function PigDashboard() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        {/* We don't need this right now, we can have placeholder for something else later */}
+        {/* <div className="flex items-center gap-2">
           <Button variant="primary" onClick={() => setAddHealthRecordOpen(true)}>
             Add Health Record
           </Button>
@@ -455,7 +456,7 @@ export default function PigDashboard() {
           <Button variant="light" onClick={handlePrintReport}>
             Print Report
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* We'll use the dynamic health metrics cards instead of static ones */}

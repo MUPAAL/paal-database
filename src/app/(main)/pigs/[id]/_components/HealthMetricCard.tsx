@@ -67,7 +67,8 @@ export function HealthMetricCard({
           const response = await api.get(endpoint)
 
           // Store the available date range in a global variable if it's the posture endpoint
-          if (endpoint.includes('/posture/') && response.data.dateRange && !window.pigPostureDateRange) {
+          if (endpoint.includes('/posture/') && response.data.dateRange) {
+            // Also store in global variable for backward compatibility
             window.pigPostureDateRange = response.data.dateRange
             console.log('Available date range from HealthMetricCard:', response.data.dateRange)
           }
