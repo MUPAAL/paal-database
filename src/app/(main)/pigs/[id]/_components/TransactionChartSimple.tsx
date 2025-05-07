@@ -57,7 +57,16 @@ export function TransactionChart({
 
   // Reset the dataFetchedRef when the date range changes
   useEffect(() => {
+    console.log("Date range changed in URL:", { startParam, endParam });
+    // Always reset the dataFetchedRef when the date range changes
     dataFetchedRef.current = false;
+    // Clear existing data to show loading state
+    setPostureData(null);
+    setIsLoading(true);
+    setError(null);
+
+    // Log the current URL for debugging
+    console.log("Current URL:", window.location.href);
   }, [startParam, endParam]);
 
   // Fetch posture data
@@ -66,6 +75,8 @@ export function TransactionChart({
     if (dataFetchedRef.current && postureData && postureData.length > 0) {
       return;
     }
+
+    console.log("Fetching new data due to date range change or initial load");
 
     const fetchPostureData = async () => {
       try {
@@ -77,16 +88,25 @@ export function TransactionChart({
 
         if (startParam) {
           params.append('start', startParam)
+          console.log(`Adding start date parameter: ${startParam}`)
         }
 
         if (endParam) {
           params.append('end', endParam)
+          console.log(`Adding end date parameter: ${endParam}`)
         }
 
         const queryString = params.toString()
         // Use the direct endpoint for the aggregated posture data
         const url = `http://localhost:8080/api/pigs/${pigId}/posture/aggregated${queryString ? `?${queryString}` : ''}`
         console.log('Fetching posture data with URL:', url)
+
+        // Log the date range for debugging
+        if (startParam && endParam) {
+          console.log(`Date range: ${startParam} to ${endParam}`);
+        } else {
+          console.log('No date range specified, fetching all data');
+        }
 
         const response = await fetch(url)
         if (!response.ok) {
@@ -155,6 +175,9 @@ export function TransactionChart({
     if (!postureData || postureData.length === 0) {
       return []
     }
+
+    // Log the data we're processing
+    console.log(`Processing ${postureData.length} data points for chart display`);
 
     if (type === "amount") {
       // Process the aggregated data for the chart

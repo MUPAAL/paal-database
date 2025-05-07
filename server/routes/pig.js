@@ -268,58 +268,122 @@ router.get('/:id/posture/aggregated', async (req, res) => {
     const { start, end } = req.query;
     console.log('Received date range parameters:', { start, end });
 
-    // Build query with date range if provided
-    let query = { pigId: id };
+    // We'll use MongoDB's aggregation pipeline for date filtering
 
-    // Function to create a date with time set to start or end of day
-    const createDateWithTime = (dateStr, isEndOfDay = false) => {
-      try {
-        // Parse the date string (YYYY-MM-DD)
-        const [year, month, day] = dateStr.split('-').map(num => parseInt(num, 10));
+    // Use MongoDB aggregation pipeline for more robust date filtering
+    console.log('Processing date range parameters:', { start, end });
 
-        // Month is 0-indexed in JavaScript Date
-        const date = new Date(year, month - 1, day);
-
-        // Set time to beginning or end of day
-        if (isEndOfDay) {
-          date.setHours(23, 59, 59, 999); // End of day (23:59:59.999)
-        } else {
-          date.setHours(0, 0, 0, 0); // Start of day (00:00:00.000)
+    // Build the aggregation pipeline
+    const pipeline = [
+      // Stage 1: Match the pig ID
+      {
+        $match: {
+          pigId: id
         }
-
-        return date;
-      } catch (error) {
-        console.error('Error creating date with time:', error);
-        return null;
       }
-    };
+    ];
 
-    if (start && end) {
-      try {
-        // Create dates with proper time components
-        const startDate = createDateWithTime(start);
-        const endDate = createDateWithTime(end, true);
-
-        // Validate dates
-        if (startDate && endDate && !isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
-          query.timestamp = {
-            $gte: startDate,
-            $lte: endDate
-          };
-          console.log('Using date range filter:', {
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString()
-          });
-        } else {
-          console.warn('Invalid date format provided:', { start, end });
+    // Stage 2: Check if timestamp is a string or Date and convert accordingly
+    pipeline.push({
+      $addFields: {
+        // First check the type of timestamp and convert if needed
+        normalizedTimestamp: {
+          $cond: {
+            if: { $eq: [{ $type: "$timestamp" }, "string"] },
+            then: { $toDate: "$timestamp" },
+            else: "$timestamp"
+          }
         }
-      } catch (error) {
-        console.error('Error parsing date range:', error);
       }
+    });
+
+    // Stage 3: Add a dateStr field for date filtering using the normalized timestamp
+    pipeline.push({
+      $addFields: {
+        dateStr: { $dateToString: { format: "%Y-%m-%d", date: "$normalizedTimestamp" } }
+      }
+    });
+
+    // Stage 4: Filter by date range if provided
+    if (start || end) {
+      const dateFilter = {};
+
+      if (start) {
+        dateFilter.$gte = start;
+        console.log(`Filtering for dates >= ${start}`);
+      }
+
+      if (end) {
+        dateFilter.$lte = end;
+        console.log(`Filtering for dates <= ${end}`);
+      }
+
+      if (Object.keys(dateFilter).length > 0) {
+        pipeline.push({
+          $match: {
+            dateStr: dateFilter
+          }
+        });
+
+        console.log('Using date range filter:', dateFilter);
+      }
+    } else {
+      console.log('No date range parameters provided, fetching all data');
     }
 
-    // Find posture data for this pig with date range filter if provided
-    const postureData = await PigPosture.find(query).sort({ timestamp: 1 });
+    // Add a debug stage to see what's happening with the dates
+    if (start || end) {
+      // This is just for debugging - we'll remove it in production
+      pipeline.push({
+        $addFields: {
+          debug: {
+            originalTimestamp: "$timestamp",
+            normalizedTimestamp: "$normalizedTimestamp",
+            dateStr: "$dateStr",
+            matchesFilter: {
+              $and: [
+                { $gte: ["$dateStr", start || "0000-00-00"] },
+                { $lte: ["$dateStr", end || "9999-99-99"] }
+              ]
+            }
+          }
+        }
+      });
+    }
+
+    // Stage 4: Sort by timestamp
+    pipeline.push({
+      $sort: { timestamp: 1 }
+    });
+
+    console.log(`Executing aggregation pipeline:`, JSON.stringify(pipeline, null, 2));
+
+    // Execute the aggregation pipeline with error handling
+    let postureData;
+    try {
+      postureData = await PigPosture.aggregate(pipeline);
+      console.log(`Successfully aggregated posture data: ${postureData.length} records found`);
+    } catch (error) {
+      console.error('Error aggregating posture data:', error);
+      // Fall back to a simpler query if aggregation fails
+      console.log('Falling back to simple query without aggregation');
+      postureData = await PigPosture.find({ pigId: id }).sort({ timestamp: 1 });
+      console.log(`Retrieved ${postureData.length} records using fallback query`);
+    }
+
+    // Log some sample data for debugging
+    if (postureData.length > 0) {
+      // Check if timestamp is a Date object or a string
+      const timestamp = postureData[0].timestamp;
+      const isDateObject = timestamp instanceof Date;
+
+      console.log(`Sample data (first record):`, {
+        timestamp: timestamp,
+        isDateObject: isDateObject,
+        dateStr: postureData[0].dateStr || 'N/A',
+        score: postureData[0].score
+      });
+    }
 
     console.log(`Fetched posture data for pig ${id}: ${postureData.length} records`)
 
@@ -329,7 +393,26 @@ router.get('/:id/posture/aggregated', async (req, res) => {
     // Process each posture record and group by date
     postureData.forEach(record => {
       // Extract the date part from the timestamp (YYYY-MM-DD)
-      const date = record.timestamp.toISOString().split('T')[0];
+      // Use dateStr if available (from aggregation pipeline), otherwise try to extract from timestamp
+      let date;
+
+      if (record.dateStr) {
+        // Use the dateStr field from the aggregation pipeline
+        date = record.dateStr;
+      } else if (record.timestamp instanceof Date) {
+        // If timestamp is a Date object, convert to ISO string and extract date part
+        date = record.timestamp.toISOString().split('T')[0];
+      } else if (typeof record.timestamp === 'string') {
+        // If timestamp is a string, extract date part
+        date = record.timestamp.split('T')[0];
+      } else if (record.normalizedTimestamp instanceof Date) {
+        // If normalizedTimestamp is available and is a Date object
+        date = record.normalizedTimestamp.toISOString().split('T')[0];
+      } else {
+        // Fallback to current date if no valid date found
+        console.warn('No valid date found in record:', record);
+        date = new Date().toISOString().split('T')[0];
+      }
 
       // Initialize the date entry if it doesn't exist
       if (!groupedByDate[date]) {
@@ -426,7 +509,21 @@ router.get('/:id/posture/latest', async (req, res) => {
     // Group by date to find the most recent day with data
     const posturesByDate = {}
     recentPostures.forEach(record => {
-      const dateStr = record.timestamp.toISOString().split('T')[0]
+      // Extract date string safely
+      let dateStr;
+
+      if (record.timestamp instanceof Date) {
+        // If timestamp is a Date object
+        dateStr = record.timestamp.toISOString().split('T')[0];
+      } else if (typeof record.timestamp === 'string') {
+        // If timestamp is a string
+        dateStr = record.timestamp.split('T')[0];
+      } else {
+        // Fallback
+        console.warn('Invalid timestamp format in record:', record);
+        dateStr = new Date().toISOString().split('T')[0];
+      }
+
       if (!posturesByDate[dateStr]) {
         posturesByDate[dateStr] = []
       }
@@ -482,6 +579,9 @@ router.get('/:id/posture/latest', async (req, res) => {
 })
 
 
+// Helper function to calculate date range based on a predefined range string
+// This function is kept for future use but is currently not used
+// eslint-disable-next-line no-unused-vars
 function calculateDateRange(range) {
   const now = new Date();
   let startDate = new Date();
@@ -899,7 +999,7 @@ router.get('/pigs/:pigId/posture-summary', async (req, res) => {
 
 
 // Get pig analytics summary
-router.get('/analytics/summary', async (req, res) => {
+router.get('/analytics/summary', async (_, res) => {
   try {
     const pigs = await Pig.find({})
       .populate('healthStatus')
