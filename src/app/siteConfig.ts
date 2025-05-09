@@ -12,6 +12,12 @@ export const siteConfig = {
       devices: "/settings/devices",
       alerts: "/settings/alerts",
     },
+    systemOverview:  {
+      farms: "/system-overview/overview",
+      monitoring: "/system-overview/monitoring",
+      insights: "/system-overview/insights",
+    }
+
   },
 }
 

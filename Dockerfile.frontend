@@ -1,0 +1,25 @@
+FROM node:20-alpine
+
+# Enable Corepack and install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy package files first for dependency caching
+COPY package*.json pnmp-lock.yaml ./
+
+# Install production dependencies
+RUN pnpm install --production
+
+# Copy the rest of your application code (including Next.js pages, etc.)
+COPY . .
+
+# Build the Next.js application (this creates the production build)
+RUN npm run build
+
+# Expose the port Next.js will run on
+EXPOSE 3000
+
+# Start Next.js in production mode
+CMD ["npm", "start"]

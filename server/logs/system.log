@@ -1,0 +1,6 @@
+[2025-04-06T01:55:42.694Z] [INFO] Server started
+[2025-04-06T01:55:42.694Z] [INFO] MongoDB connected
+[2025-04-06T01:55:42.694Z] [INFO] System initialized
+[2025-04-06T01:55:42.694Z] [INFO] User admin@test.com logged in
+[2025-04-06T01:55:42.694Z] [INFO] System metrics requested
+[2025-04-06T01:55:42.694Z] [INFO] System logs requested

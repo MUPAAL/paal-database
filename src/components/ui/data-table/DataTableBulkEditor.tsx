@@ -1,4 +1,4 @@
-import { Button } from "@/components/Button"
+// import { Button } from "@/components/Button"
 import {
   CommandBar,
   CommandBarBar,
@@ -6,11 +6,11 @@ import {
   CommandBarSeperator,
   CommandBarValue,
 } from "@/components/CommandBar"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/Dialog"
-import { Input } from "@/components/Input"
-import { Label } from "@/components/Label"
+// import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/Dialog"
+// import { Input } from "@/components/Input"
+// import { Label } from "@/components/Label"
+import api from "@/lib/axios"
 import { RowSelectionState, Table } from "@tanstack/react-table"
-import axios from "axios"
 import { useState } from "react"
 
 type DataTableBulkEditorProps<TData> = {
@@ -22,8 +22,8 @@ function DataTableBulkEditor<TData>({
   table,
   rowSelection,
 }: DataTableBulkEditorProps<TData>) {
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [selectedPig, setSelectedPig] = useState<any>(null)
+  // const [editDialogOpen, setEditDialogOpen] = useState(false)
+  // const [selectedPig, setSelectedPig] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
   const hasSelectedRows = Object.keys(rowSelection).length > 0
   const selectedCount = Object.keys(rowSelection).length
@@ -42,39 +42,38 @@ function DataTableBulkEditor<TData>({
     URL.revokeObjectURL(url)
   }
 
-  const handleEdit = () => {
-    if (selectedCount === 1) {
-      const selectedRow = table.getSelectedRowModel().rows[0]
-      setSelectedPig(selectedRow.original)
-      setEditDialogOpen(true)
-    }
-  }
+  // const handleEdit = () => {
+  //   if (selectedCount === 1) {
+  //     const selectedRow = table.getSelectedRowModel().rows[0]
+  //     setSelectedPig(selectedRow.original)
+  //     setEditDialogOpen(true)
+  //   }
+  // }
 
-  const handleSave = async (formData: any) => {
-    setIsLoading(true)
-    try {
-      const pigId = selectedPig.owner.replace('PIG-', '')
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/pigs/${pigId}`, formData)
-      window.location.reload() // Refresh to show updated data
-    } catch (error) {
-      console.error('Error updating pig:', error)
-      // Here you would show an error notification
-    } finally {
-      setIsLoading(false)
-      setEditDialogOpen(false)
-    }
-  }
+  // const handleSave = async (formData: any) => {
+  //   setIsLoading(true)
+  //   try {
+  //     const pigId = selectedPig.owner.replace('PIG-', '')
+  //     await axios.put(`http://localhost:5005/api/pigs/${pigId}`, formData)
+  //     window.location.reload() // Refresh to show updated data
+  //   } catch (error) {
+  //     console.error('Error updating pig:', error)
+  //     // Here you would show an error notification
+  //   } finally {
+  //     setIsLoading(false)
+  //     setEditDialogOpen(false)
+  //   }
+  // }
 
   const handleDelete = async () => {
     setIsLoading(true)
     try {
-      const selectedPigs = table.getSelectedRowModel().rows.map(row => 
+      const selectedPigs = table.getSelectedRowModel().rows.map(row =>
         (row.original as any).owner.replace('PIG-', '')
       )
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/pigs`, {
+      await api.delete(`/pigs`, {
         data: { pigIds: selectedPigs }
       })
-      window.location.reload() // Refresh to show updated data
     } catch (error) {
       console.error('Error deleting pigs:', error)
       // Here you would show an error notification
@@ -92,7 +91,7 @@ function DataTableBulkEditor<TData>({
             {selectedCount} selected
           </CommandBarValue>
           <CommandBarSeperator />
-          {selectedCount === 1 && (
+          {/* {selectedCount === 1 && (
             <>
               <CommandBarCommand
                 label="Edit"
@@ -101,7 +100,7 @@ function DataTableBulkEditor<TData>({
               />
               <CommandBarSeperator />
             </>
-          )}
+          )} */}
           <CommandBarCommand
             label="Download"
             action={handleDownload}
@@ -112,6 +111,7 @@ function DataTableBulkEditor<TData>({
             label="Delete"
             action={handleDelete}
             shortcut={{ shortcut: "Delete" }}
+            disabled={isLoading}
           />
           <CommandBarSeperator />
           <CommandBarCommand
@@ -123,8 +123,8 @@ function DataTableBulkEditor<TData>({
           />
         </CommandBarBar>
       </CommandBar>
-
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      {/*  
+       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Pig Details</DialogTitle>
@@ -185,7 +185,7 @@ function DataTableBulkEditor<TData>({
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+      </Dialog>  */}
     </>
   )
 }

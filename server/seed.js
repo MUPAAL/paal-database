@@ -1,150 +1,246 @@
-/**
- * seed.js
- *
- * Generates 40 documents in each of the following collections:
- *   - Device
- *   - Pig
- *   - BCSData
- *   - PostureData
- *   - TemperatureData
- *
- * Each collection references each other in a consistent way:
- *   - pigId in [1..40]
- *   - deviceId in [1..40]
- *   - recordId in [1..40] for BCS/Posture/Temperature
- *
- * Usage:
- *   1) Create a .env file with MONGODB_URI=your_connection_string
- *   2) Run: node seed.js
- */
-
 require('dotenv').config();
 const mongoose = require('mongoose');
 
-// Import Models (adjust paths if your structure differs)
-const Device = require('./models/Device');
-const Pig = require('./models/Pig');
-const BCSData = require('./models/BCSData');
-const PostureData = require('./models/PostureData');
-const TemperatureData = require('./models/TemperatureData');
+const DATABASE_HOST = process.env.DATABASE_HOST;
+const DATABASE_PORT = process.env.DATABASE_PORT;
+const DATABASE_DB = process.env.MONGO_INITDB_DATABASE;
+const DATABASE_USERNAME = process.env.MONGO_INITDB_ROOT_USERNAME;
+const DATABASE_PASSWORD = process.env.MONGO_INITDB_ROOT_PASSWORD;
 
-/** Helpers for random data generation */
+const URI = `mongodb://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@mongo:${DATABASE_PORT}/${DATABASE_DB}?replicaSet=rs0&authSource=admin`;
+
+// Models
+const Farm = require('./models/Farm');
+const Barn = require('./models/Barn');
+const Stall = require('./models/Stall');
+const Pig = require('./models/Pig');
+const PigHealthStatus = require('./models/PigHealthStatus');
+const PigFertility = require('./models/PigFertility');
+const PigHeatStatus = require('./models/PigHeatStatus');
+const PigPosture = require('./models/PostureData');
+const PigBCS = require('./models/PigBCS');
+const PigVulvaSwelling = require('./models/PigVulvaSwelling');
+const PigBreathRate = require('./models/PigBreathRate');
+const Device = require('./models/Device');
+const DeviceData = require('./models/TemperatureData');
+const User = require('./models/User');
+
 function getRandomItem(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
-
 function getRandomInt(min, max) {
-  // inclusive of min..max
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
 function getRandomFloat(min, max, decimals = 1) {
   const scale = Math.pow(10, decimals);
   return Math.round((Math.random() * (max - min) + min) * scale) / scale;
 }
-
-function getRandomDateWithinLastDays(days = 30) {
+function getDailyTimestamps(days = 30) {
+  const timestamps = [];
   const now = Date.now();
-  const past = now - days * 24 * 60 * 60 * 1000;
-  const randomTime = getRandomInt(past, now);
-  return new Date(randomTime);
+  const oneDay = 24 * 60 * 60 * 1000;
+  for (let i = days - 1; i >= 0; i--) {
+    timestamps.push(new Date(now - i * oneDay));
+  }
+  return timestamps;
 }
 
 async function seedDatabase() {
   try {
-    // 1. Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to MongoDB');
+    await mongoose.connect(URI);
+    console.log('✅ Connected to MongoDB');
 
-    // 2. Clear existing data (optional but recommended for a fresh start)
+    // 🔥 Clean up corrupted index
+    try {
+      await mongoose.connection.db.dropCollection('pigs');
+      console.log('🧹 Dropped existing pigs collection');
+    } catch (_) {
+      console.log('ℹ️ No existing pigs collection to drop');
+    }
+
+    // Clean DB (except users)
     await Promise.all([
+      Farm.deleteMany({}),
+      Barn.deleteMany({}),
+      Stall.deleteMany({}),
+      PigHealthStatus.deleteMany({}),
+      PigFertility.deleteMany({}),
+      PigHeatStatus.deleteMany({}),
+      PigPosture.deleteMany({}),
+      PigBCS.deleteMany({}),
+      PigVulvaSwelling.deleteMany({}),
+      PigBreathRate.deleteMany({}),
       Device.deleteMany({}),
-      Pig.deleteMany({}),
-      BCSData.deleteMany({}),
-      PostureData.deleteMany({}),
-      TemperatureData.deleteMany({})
+      DeviceData.deleteMany({})
     ]);
 
-    // 3. Create 40 Devices
-    const statusList = ['online', 'offline', 'warning'];
-    const devicesData = [];
-    for (let i = 1; i <= 40; i++) {
-      devicesData.push({
+    // Create admin user if it doesn't exist
+    const adminId = '67f1cac0399bf2dda1ea08a8';
+    const adminExists = await User.findOne({ email: 'admin@test.com' });
+
+    if (!adminExists) {
+      // Create admin user with specific ID
+      const admin = new User({
+        _id: adminId,
+        email: 'admin@test.com',
+        password: 'admin123', // This will be hashed by the pre-save hook
+        firstName: 'Admin',
+        lastName: 'User',
+        role: 'admin',
+        isActive: true,
+        lastLogin: new Date()
+      });
+      await admin.save();
+      console.log('👤 Created admin user with ID:', adminId);
+    } else {
+      // Update existing admin user to have the correct ID if needed
+      if (adminExists._id.toString() !== adminId) {
+        console.log('⚠️ Admin user exists but with different ID. Current ID:', adminExists._id);
+        console.log('⚠️ This may cause issues with login. Consider dropping the database and reseeding.');
+      } else {
+        console.log('👤 Admin user already exists with correct ID');
+      }
+    }
+
+    const farms = [];
+    for (let i = 1; i <= 2; i++) {
+      const farm = await Farm.create({ name: `Farm ${i}`, location: `Location ${i}` });
+      farms.push(farm);
+    }
+
+    const barns = [];
+    for (let farm of farms) {
+      for (let j = 1; j <= 3; j++) {
+        const barn = await Barn.create({ name: `Barn ${j}`, farmId: farm._id });
+        barns.push(barn);
+      }
+    }
+
+    const stalls = [];
+    for (let barn of barns) {
+      for (let k = 1; k <= 5; k++) {
+        const stall = await Stall.create({ name: `Stall ${k}`, barnId: barn._id, farmId: barn.farmId });
+        stalls.push(stall);
+      }
+    }
+
+    const pigBreeds = ['Yorkshire', 'Landrace', 'Duroc', 'Berkshire', 'Hampshire', 'Chester White', 'Tamworth'];
+    let globalPigId = 1;
+    const pigs = [];
+
+    for (let stall of stalls) {
+      const pigCount = getRandomInt(4, 6);
+      for (let i = 0; i < pigCount; i++) {
+        const pigId = globalPigId++;
+        try {
+          const pig = await Pig.create({
+            pigId,
+            tag: `Tag-${pigId}`,
+            currentLocation: {
+              stallId: stall._id,
+              barnId: stall.barnId,
+              farmId: stall.farmId
+            },
+            lastUpdate: new Date(),
+            breed: getRandomItem(pigBreeds),
+            age: getRandomInt(1, 36),
+            active: true
+          });
+          console.log(`🐷 Created pig ${pigId}`);
+          pigs.push(pig);
+        } catch (err) {
+          console.error(`💥 Failed to create pig ${pigId}:`, err.message);
+          throw err;
+        }
+      }
+    }
+
+    const timestamps = getDailyTimestamps(30);
+    const statuses = {
+      health: ['at risk', 'healthy', 'critical', 'no movement'],
+      fertility: ['in heat', 'Pre-Heat', 'Open', 'ready to breed'],
+      heat: ['open', 'bred', 'pregnant', 'farrowing', 'weaning'],
+      vulva: ['low', 'moderate', 'high']
+    };
+
+    for (let pig of pigs) {
+      const pigId = pig.pigId;
+      await PigHealthStatus.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, status: getRandomItem(statuses.health) })));
+      await PigFertility.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, status: getRandomItem(statuses.fertility) })));
+      await PigHeatStatus.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, status: getRandomItem(statuses.heat) })));
+      await PigPosture.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, score: getRandomInt(1, 5) })));
+      await PigBCS.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, score: getRandomFloat(2, 4, 1) })));
+      await PigVulvaSwelling.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, value: getRandomItem(statuses.vulva) })));
+      await PigBreathRate.insertMany(timestamps.map(ts => ({ pigId, timestamp: ts, rate: getRandomInt(15, 30) })));
+    }
+
+    const deviceStatus = ['online', 'offline', 'warning'];
+    const devices = [];
+    for (let i = 1; i <= 10; i++) {
+      const device = await Device.create({
         deviceId: i,
-        deviceName: `TempSensor-${i}`,
+        deviceName: `Sensor-${i}`,
         deviceType: 'Temperature',
-        status: getRandomItem(statusList),
-        temperature: getRandomFloat(20, 30, 1), // random between 20.0 and 30.0
+        status: getRandomItem(deviceStatus),
+        temperature: getRandomFloat(20, 30, 1)
       });
+      devices.push(device);
     }
-    const devices = await Device.create(devicesData);
 
-    // 4. Create 40 Pigs
-    const pigBreeds = ['Large White', 'Yorkshire', 'Duroc', 'Hampshire', 'Berkshire'];
-    const pigsData = [];
-    for (let i = 1; i <= 40; i++) {
-      pigsData.push({
-        pigId: i,
-        groupId: getRandomInt(1, 5), // random group 1..5
-        breed: getRandomItem(pigBreeds),
-        age: getRandomInt(1, 36),        // random months in age
-        bcsScore: getRandomFloat(2, 4),  // typical BCS range, can be 2.0..4.0
-        posture: getRandomInt(1, 3)      // 1..3
+    let recordId = 1;
+    for (let device of devices) {
+      await DeviceData.insertMany(timestamps.map(ts => ({
+        recordId: recordId++,
+        deviceId: device.deviceId,
+        timestamp: ts,
+        temperature: getRandomFloat(20, 30, 1)
+      })));
+    }
+
+    // Create farmer user if it doesn't exist
+    const farmerId = '67f1cac0399bf2dda1ea08a9';
+    const farmerExists = await User.findOne({ email: 'farmer@test.com' });
+
+    if (!farmerExists) {
+      // Get the first farm
+      const farm = farms[0];
+
+      const farmer = new User({
+        _id: farmerId,
+        email: 'farmer@test.com',
+        password: 'farmer123', // This will be hashed by the pre-save hook
+        firstName: 'Farmer',
+        lastName: 'User',
+        role: 'farmer',
+        assignedFarm: farm._id,
+        isActive: true,
+        lastLogin: new Date()
       });
+      await farmer.save();
+      console.log('👨‍🌾 Created farmer user with ID:', farmerId);
+    } else {
+      // Update existing farmer user to have the correct ID if needed
+      if (farmerExists._id.toString() !== farmerId) {
+        console.log('⚠️ Farmer user exists but with different ID. Current ID:', farmerExists._id);
+        console.log('⚠️ This may cause issues with login. Consider dropping the database and reseeding.');
+      } else {
+        console.log('👨‍🌾 Farmer user already exists with correct ID');
+      }
     }
-    const pigs = await Pig.create(pigsData);
 
-    // 5. Create 40 BCSData entries (one per pigId)
-    const bcsDataArray = [];
-    for (let i = 1; i <= 40; i++) {
-      bcsDataArray.push({
-        recordId: i,                     // required/unique
-        pigId: i,                        // one-to-one for demonstration
-        bcsScore: getRandomFloat(2, 4),
-        timestamp: getRandomDateWithinLastDays(30) // random date in last 30 days
-      });
-    }
-    const bcsData = await BCSData.create(bcsDataArray);
-
-    // 6. Create 40 PostureData entries (one per pigId)
-    const postureDataArray = [];
-    for (let i = 1; i <= 40; i++) {
-      postureDataArray.push({
-        recordId: i,
-        pigId: i,
-        posture: getRandomInt(1, 3), // e.g., 1..3
-        timestamp: getRandomDateWithinLastDays(30)
-      });
-    }
-    const postureData = await PostureData.create(postureDataArray);
-
-    // 7. Create 40 TemperatureData entries (one per deviceId)
-    const temperatureDataArray = [];
-    for (let i = 1; i <= 40; i++) {
-      temperatureDataArray.push({
-        recordId: i,
-        deviceId: i,
-        temperature: getRandomFloat(20, 30),
-        timestamp: getRandomDateWithinLastDays(30)
-      });
-    }
-    const temperatureData = await TemperatureData.create(temperatureDataArray);
-
-    // 8. Confirm success
-    console.log('\nDatabase seeded successfully!');
+    console.log('\n🎉 Database seeded successfully!');
     console.log(`
       Created:
-        - ${devices.length} Devices
+        - ${farms.length} Farms
+        - ${barns.length} Barns
+        - ${stalls.length} Stalls
         - ${pigs.length} Pigs
-        - ${bcsData.length} BCSData records
-        - ${postureData.length} PostureData records
-        - ${temperatureData.length} TemperatureData records
+        - ${devices.length} Devices (w/ temp data)
     `);
 
-    // 9. Close the script
     process.exit(0);
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('🔥 Error seeding database:', error);
     process.exit(1);
   }
 }
