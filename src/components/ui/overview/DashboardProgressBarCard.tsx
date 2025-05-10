@@ -1,7 +1,7 @@
 import { Badge } from "@/components/Badge"
 import { ProgressBar } from "@/components/ProgressBar"
 
-import { KpiEntry } from "@/app/(main)/overview/page"
+import { KpiEntry } from "@/app/(main)/overview/components/constants"
 
 export type CardProps = {
   title: string
@@ -24,6 +24,48 @@ export function ProgressBarCard({
   ctaLink,
   data,
 }: CardProps) {
+  // Check if this is the Device Metrics card and if devices are zero
+  const isDeviceMetricsWithZeroDevices = title === "Device Metrics" &&
+    (data.length === 0 || data.every(item => item.current === 0));
+
+  // Check if this is the Health Metrics card and if all health conditions have zero pigs
+  const isHealthMetricsWithZeroPigs = title === "Health Metrics" &&
+    (data.length === 0 || data.every(item => item.current === 0));
+
+  // If no data or specific conditions for placeholders, display a message
+  if (!data || data.length === 0 || isDeviceMetricsWithZeroDevices || isHealthMetricsWithZeroPigs) {
+    return (
+      <div className="flex flex-col justify-between bg-gray-50 dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800">
+        <div>
+          <div className="flex items-center gap-2">
+            <dt className="font-bold text-gray-900 sm:text-sm dark:text-gray-50">
+              {title}
+            </dt>
+            <Badge variant="neutral">{change}</Badge>
+          </div>
+          <dd className="mt-2 flex items-baseline gap-2">
+            <span className="text-xl text-gray-900 dark:text-gray-50">
+              0
+            </span>
+            <span className="text-sm text-gray-500">{valueDescription}</span>
+          </dd>
+          <div className="flex h-40 items-center justify-center">
+            <div className="text-center">
+              <p className="text-gray-500 mb-2">No pig information available</p>
+              <p className="text-xs text-gray-400">{title === "Device Metrics" ? "Add devices to see metrics" : "Add pigs to see metrics"}</p>
+            </div>
+          </div>
+          <p className="mt-4 text-xs text-gray-500">
+            {ctaDescription}{" "}
+            <a href={ctaLink} className="text-indigo-600 dark:text-indigo-400">
+              {ctaText}
+            </a>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-col justify-between">
@@ -36,7 +78,7 @@ export function ProgressBarCard({
           </div>
           <dd className="mt-2 flex items-baseline gap-2">
             <span className="text-xl text-gray-900 dark:text-gray-50">
-              {value}
+              {parseInt(value)}
             </span>
             <span className="text-sm text-gray-500">{valueDescription}</span>
           </dd>

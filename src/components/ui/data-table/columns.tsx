@@ -1,18 +1,18 @@
 "use client"
-
 import { Badge } from "@/components/Badge"
 import { Checkbox } from "@/components/Checkbox"
 import { healthStatuses } from "@/data/data"
 import { Usage } from "@/data/schema"
 import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
+import Link from "next/link"
 import { DataTableColumnHeader } from "./DataTableColumnHeader"
 import { ConditionFilter } from "./DataTableFilter"
 import { DataTableRowActions } from "./DataTableRowActions"
-import Link from "next/link"
 
 const columnHelper = createColumnHelper<Usage>()
 
 export const columns = [
+
   columnHelper.display({
     id: "select",
     header: ({ table }) => (
@@ -50,7 +50,7 @@ export const columns = [
     cell: ({ row }) => {
       const pigId = row.original.owner.replace('PIG-', '')
       return (
-        <Link 
+        <Link
           href={`/pigs/${pigId}`}
           className="text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
         >
@@ -155,7 +155,7 @@ export const columns = [
 
       return (
         <div className="flex items-center gap-0.5">
-          <span className="w-6">{value}</span>
+          <span className="w-6">{value === 0 ? "--" : value}</span>
           <Indicator number={value} />
         </div>
       )
@@ -212,6 +212,11 @@ export const columns = [
       className: "text-right",
       displayName: "Edit",
     },
-    cell: ({ row }) => <DataTableRowActions row={row} />,
+    cell: ({ row, table }) => (
+      <DataTableRowActions
+        row={row}
+        table={table}
+      />
+    ),
   }),
 ] as ColumnDef<Usage>[]

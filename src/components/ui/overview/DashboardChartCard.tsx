@@ -1,201 +1,152 @@
-// Update the ChartCard component to use React.memo to prevent unnecessary re-renders
-import { PeriodValue } from "@/app/(main)/overview/page"
-import React from "react"
-// (removed)
-import { Badge } from "@/components/Badge"
-import { LineChart } from "@/components/LineChart"
-import { overviewData } from "@/data/overview-data"
-import { cx, formatters, percentageFormatter } from "@/lib/utils"
-import {
-  eachDayOfInterval,
-  formatDate,
-  interval,
-  isWithinInterval,
-} from "date-fns"
-import Link from "next/link"
-import { DateRange } from "react-day-picker"
-import { getPeriod } from "./DashboardFilterbar"
+import { PeriodValue } from "@/app/(main)/overview/page";
+import { BarChartVariant } from "@/components/BarChartVariant";
+import { AvailableChartColorsKeys } from "@/lib/chartUtils";
+import { cx } from "@/lib/utils";
+import React from "react";
+import { DateRange } from "react-day-picker";
+
+type ChartDataPoint = {
+  date: string;
+  totalPigs?: number; // Optional for heat and fertility charts
+  totalPigsInHeat?: number; // Optional for heat and fertility charts
+  totalPigsReadyToBreed?: number; // Optional for heat and fertility charts
+  // Heat status properties
+  open?: number;
+  bred?: number;
+  pregnant?: number;
+  farrowing?: number;
+  weaning?: number;
+  // Fertility status properties
+  inHeat?: number;
+  preHeat?: number;
+  readyToBreed?: number;
+};
 
 export type CardProps = {
-  title: keyof (typeof overviewData)[number]
-  type: "currency" | "unit"
-  selectedDates: DateRange | undefined
-  selectedPeriod: PeriodValue
-  isThumbnail?: boolean
-}
+  title: string;
+  type: "currency" | "unit";
+  selectedDates: DateRange | undefined;
+  selectedPeriod: PeriodValue;
+  data: ChartDataPoint[]; // Time-series data passed from parent
+  categories?: string[]; // Dynamic categories for the chart
+  colors?: AvailableChartColorsKeys[]; // Dynamic colors for the chart
+};
 
 const formattingMap = {
-  currency: formatters.currency,
-  unit: formatters.unit,
-}
-
-export const getBadgeType = (value: number) => {
-  if (value > 0) {
-    return "success"
-  } else if (value < 0) {
-    if (value < -50) {
-      return "warning"
-    }
-    return "error"
-  } else {
-    return "neutral"
-  }
-}
+  currency: (value: number) => `$${value}`,
+  unit: (value: number) => `${value}`,
+};
 
 export const ChartCard = React.memo(function ChartCard({
   title,
   type,
   selectedDates,
   selectedPeriod,
-  isThumbnail,
+  data, // Time-series data passed from parent
+  categories = ["totalPigs", "totalPigsInHeat", "totalPigsReadyToBreed"], // Default categories
+  colors = ["blue", "emerald", "violet", "amber", "gray"], // Default colors
 }: CardProps) {
-  const formatter = formattingMap[type]
-  const selectedDatesInterval = React.useMemo(() =>
-    selectedDates?.from && selectedDates?.to
-      ? interval(selectedDates.from, selectedDates.to)
-      : null,
-    [selectedDates]
-  )
+  const formatter = formattingMap[type];
 
-  const allDatesInInterval = React.useMemo(() =>
-    selectedDates?.from && selectedDates?.to
-      ? eachDayOfInterval(interval(selectedDates.from, selectedDates.to))
-      : null,
-    [selectedDates]
-  )
+  // Filter data based on selected dates
+  const filteredData = React.useMemo(() => {
+    if (!selectedDates?.from || !selectedDates?.to) return [];
 
-  const prevDates = React.useMemo(() => 
-    getPeriod(selectedDates, selectedPeriod),
-    [selectedDates, selectedPeriod]
-  )
+    return data.filter((entry) => {
+      const entryDate = new Date(entry.date);
+      return (
+        entryDate >= selectedDates.from && entryDate <= selectedDates.to
+      );
+    });
+  }, [data, selectedDates]);
 
-  const prevDatesInterval = React.useMemo(() =>
-    prevDates?.from && prevDates?.to
-      ? interval(prevDates.from, prevDates.to)
-      : null,
-    [prevDates]
-  )
+  // Determine the value to display in the card header
+  const headerValue = React.useMemo(() => {
+    if (filteredData.length === 0) return 0;
 
-  const data = React.useMemo(() => 
-    overviewData
-      .filter((overview) => {
-        if (selectedDatesInterval) {
-          const overviewDate = new Date(overview.date)
-          return isWithinInterval(overviewDate, selectedDatesInterval)
-        }
-        return true
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    [selectedDatesInterval]
-  )
+    const lastEntry = filteredData[filteredData.length - 1];
 
-  const prevData = React.useMemo(() => 
-    overviewData
-      .filter((overview) => {
-        if (prevDatesInterval) {
-          const overviewDate = new Date(overview.date)
-          return isWithinInterval(overviewDate, prevDatesInterval)
-        }
-        return false
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    [prevDatesInterval]
-  )
+    // Use the first category as the default value
+    const defaultCategory = categories[0];
+    return lastEntry[defaultCategory as keyof ChartDataPoint] || 0;
+  }, [filteredData, categories]);
 
-  const chartData = React.useMemo(() => 
-    allDatesInInterval
-      ?.map((date, index) => {
-        const overview = data[index]
-        const prevOverview = prevData[index]
-        const value = Number((overview?.[title] as number || 0).toFixed(4))
-        const previousValue = Number((prevOverview?.[title] as number || 0).toFixed(4))
+  // Check if data is empty or if all values are zero
+  const isDataEmpty = !filteredData || filteredData.length === 0;
 
-        const evolution =
-          selectedPeriod !== "no-comparison" && value && previousValue
-            ? Number(((value - previousValue) / previousValue).toFixed(4))
-            : undefined
+  // Check if all data points have zero values for all categories
+  const hasAllZeroValues = filteredData && filteredData.length > 0 &&
+    filteredData.every(dataPoint =>
+      categories.every(category =>
+        !dataPoint[category] || dataPoint[category] === 0
+      )
+    );
 
-        return {
-          title,
-          date: date,
-          formattedDate: formatDate(date, "dd/MM/yyyy"),
-          value,
-          previousDate: prevOverview?.date,
-          previousFormattedDate: prevOverview
-            ? formatDate(new Date(prevOverview.date), "dd/MM/yyyy")
-            : null,
-          previousValue:
-            selectedPeriod !== "no-comparison" ? previousValue : null,
-          evolution,
-        }
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    [allDatesInInterval, data, prevData, selectedPeriod, title]
-  )
-
-  const categories =
-    selectedPeriod === "no-comparison" ? ["value"] : ["value", "previousValue"]
-  
-  const value = React.useMemo(() => 
-    Number(
-      (data?.reduce((acc, item) => acc + Number(item[title] || 0), 0) || 0).toFixed(4)
-    ),
-    [data, title]
-  )
-
-  const previousValue = React.useMemo(() => 
-    Number(
-      (prevData?.reduce((acc, item) => acc + Number(item[title] || 0), 0) || 0).toFixed(4)
-    ),
-    [prevData, title]
-  )
-  
-  const evolution = React.useMemo(() => 
-    selectedPeriod !== "no-comparison"
-      ? Number(((value - previousValue) / previousValue).toFixed(4))
-      : 0,
-    [selectedPeriod, value, previousValue]
-  )
-
-  return (
-    <Link href={`/metrics/${encodeURIComponent(title)}`} className="block">
-      <div className={cx("transition hover:opacity-80")}>
+  // If no data or all zero values, display a placeholder
+  if (isDataEmpty || hasAllZeroValues) {
+    return (
+      <div className={cx("transition hover:opacity-80 bg-gray-50 dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800")}>
         <div className="flex items-center justify-between gap-x-2">
           <div className="flex items-center gap-x-2">
             <dt className="font-bold text-gray-900 sm:text-sm dark:text-gray-50">
               {title}
             </dt>
-            {selectedPeriod !== "no-comparison" && (
-              <Badge variant={getBadgeType(evolution)}>
-                {percentageFormatter(evolution)}
-              </Badge>
-            )}
           </div>
         </div>
         <div className="mt-2 flex items-baseline justify-between">
           <dd className="text-xl text-gray-900 dark:text-gray-50">
-            {formatter(value)}
+            0
           </dd>
-          {selectedPeriod !== "no-comparison" && (
-            <dd className="text-sm text-gray-500">
-              from {formatter(previousValue)}
-            </dd>
-          )}
         </div>
-        <LineChart
-          className="mt-6 h-32"
-          data={chartData || []}
-          index="formattedDate"
-          colors={["indigo", "gray"]}
-          startEndOnly={true}
-          valueFormatter={(value) => formatter(value as number)}
-          showYAxis={false}
-          showLegend={false}
-          categories={categories}
-          showTooltip={isThumbnail ? false : true}
-          autoMinValue
-        />
+        <div className="flex h-64 items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-500 mb-2">No graph data available</p>
+            <p className="text-xs text-gray-400">
+              {title === "Total Pigs" ? "Add pigs to see graph data" :
+                title === "Heat Status" ? "Add pigs with heat status data to see graph" :
+                  title === "Fertility Status" ? "Add pigs with fertility data to see graph" :
+                    "Add data to see graph metrics"}
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              {hasAllZeroValues ? "All values are currently zero" : "No data points found for the selected period"}
+            </p>
+          </div>
+        </div>
       </div>
-    </Link>
-  )
-})
+    );
+  }
+
+  return (
+    <div className={cx("transition hover:opacity-80")}>
+      <div className="flex items-center justify-between gap-x-2">
+        <div className="flex items-center gap-x-2">
+          <dt className="font-bold text-gray-900 sm:text-sm dark:text-gray-50">
+            {title}
+          </dt>
+        </div>
+      </div>
+      <div className="mt-2 flex items-baseline justify-between">
+        <dd className="text-xl text-gray-900 dark:text-gray-50">
+          {formatter(headerValue)}
+        </dd>
+      </div>
+      <BarChartVariant
+        data={filteredData}
+        index="date"
+        categories={categories} // Dynamic categories
+        colors={["blue", "violet", "gray", "violet", "blue", "gray"]} // Dynamic colors
+        valueFormatter={formatter}
+        xValueFormatter={(value) => value}
+        showXAxis={true}
+        showYAxis={true}
+        showGridLines={true}
+        showTooltip={true}
+        showLegend={false}
+        autoMinValue={false}
+        enableLegendSlider={false}
+        legendPosition="right"
+        layout="vertical"
+      />
+    </div>
+  );
+});

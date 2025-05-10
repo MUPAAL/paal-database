@@ -1,0 +1,25 @@
+FROM node:20-alpine AS base
+
+# Enable Corepack and install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Set the working directory inside the container
+WORKDIR /usr/src/app
+
+# Copy only package files first for caching dependencies
+COPY package*.json pnpm-lock.yaml ./
+
+# Create a development stage for faster rebuilds
+FROM base AS dev
+
+# Install all dependencies
+RUN pnpm install --no-frozen-lockfile
+
+# Copy the server code (assuming your Node back end is in the "server" folder)
+COPY server ./server
+
+# Expose the port your backend listens on (adjust if needed)
+EXPOSE 5005
+
+# Start the back end using your start script
+CMD ["pnpm", "run", "dev:backend"]
